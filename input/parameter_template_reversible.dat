@@ -1,0 +1,25 @@
+BoxX = 
+BoxY = 
+BoxZ = 
+
+Temperature = 
+Gamma = 
+
+ConstantK = 
+ConstantR0 = 
+
+MDStep = 
+
+StartTime = 0.0
+SimTime = 
+EquilTime = 
+
+Seed = 
+
+OutputStepFile = steps
+MoleculeFile = chain
+FunctionalFile = functional
+ConfigFile = config
+StatisticsFile = stats
+ConfigOutFile = configs/config
+
