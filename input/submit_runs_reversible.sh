@@ -15,7 +15,7 @@ CPUsPerTask=1
 CPUsPerNode=64
 TasksPerNode=$[$CPUsPerNode/$CPUsPerTask]
 echo "will submit $TasksPerNode per node"  
-nodes=("4" "5")
+nodes=("8" "9")
 
 mkdir -p slurm
 currentNodeIndex=0
