@@ -95,6 +95,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Lz is " << Lz << std::endl;
     std::cout << "Temperature is " << Temperature << std::endl;
     std::cout << "Friction Coefficient is " << Gamma << std::endl;
+    std::cout << "Constant K is " << ConstantK << std::endl;
+    std::cout << "Constant R0 is " << ConstantR0 << std::endl;
     std::cout << "MDStep is " << MDStep << std::endl;
     std::cout << "RNG seed is " << Seed << std::endl; 
     std::cout << "Equiltime is " << EquilTime << std::endl;

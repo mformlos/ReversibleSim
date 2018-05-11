@@ -340,7 +340,6 @@ void System::makeIndex(unsigned molIndex, unsigned monoIndex, unsigned& Index) {
 
 void System::calculateForces(bool calcEpot) {
     //unsigned count_bonds {0}; 
-	double r0 {1.448}, K {29.6};
     double force_abs {}; 
     Vector3d force {}; 
     for (auto& mol : Molecules) {
@@ -369,9 +368,9 @@ void System::calculateForces(bool calcEpot) {
                 if (ReversiblyBonded == other -> Identifier) {
                 	double radius = sqrt(radius2);
                 	if (calcEpot) {
-                		mol.Epot += 0.5*Reversible_Bond_Potential(radius, r0, K);
+                		mol.Epot += 0.5*Reversible_Bond_Potential(radius, Radius0, K);
                 	}
-                	force_abs = Reversible_Bond_Force(radius, r0, K);
+                	force_abs = Reversible_Bond_Force(radius, Radius0, K);
                 	if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
 						throw(RLJException(mono.Identifier, mono.Position, mono.Velocity, other -> Identifier, other -> Position, other -> Velocity, force_abs));
 					}
