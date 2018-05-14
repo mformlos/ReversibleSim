@@ -663,11 +663,12 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
 		mol_count++;
 		int mono_count{0}; 
 		for (auto& mono : mol.Monomers) {
+			char type {mono.Functional ? 'O' : 'C'};
 		    if (velocs) {
-		        fprintf(pdb, "ATOM %6d  C   GLY    %2d     %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f \n", mono_count+1, mol_count, mono.Position(0), mono.Position(1), mono.Position(2), mono.Velocity(0), mono.Velocity(1), mono.Velocity(2));
+		        fprintf(pdb, "ATOM %6d  %c   GLY    %2d     %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f \n", mono_count+1, type, mol_count, mono.Position(0), mono.Position(1), mono.Position(2), mono.Velocity(0), mono.Velocity(1), mono.Velocity(2));
 		    }
 			else {
-			    fprintf(pdb, "ATOM %6d  C   GLY    %2d     %7.3f %7.3f %7.3f \n", mono_count+1, mol_count, mono.Position(0), mono.Position(1), mono.Position(2));
+			    fprintf(pdb, "ATOM %6d  %c   GLY    %2d     %7.3f %7.3f %7.3f \n", mono_count+1, type, mol_count, mono.Position(0), mono.Position(1), mono.Position(2));
 		    }
 		    mono_count++; 
 		}	
