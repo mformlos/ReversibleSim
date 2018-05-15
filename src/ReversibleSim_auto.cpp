@@ -127,19 +127,23 @@ int main(int argc, char* argv[]) {
  
     Sys.initializeVelocitiesRandom(Temperature); 
     
+    bool arranged {true};
     if (Sys.NumberOfMolecules() == 1)  {
         Sys.centerMolecule(0);
     }
     else if (Sys.NumberOfMolecules() > 1){
-        std::cout << "Code is supposed to be used with only 1 Molecule" << std::endl; 
-        return EXIT_FAILURE;  
+        arranged = Sys.arrangeMolecules();
+    }
+    if (!arranged) {
+    	std::cout << "not able to place molecules! Terminating program." << std::endl;
+     	return EXIT_FAILURE;
     }
     
     try {
     	Sys.breakBonds();
     	Sys.makeBonds();
         Sys.updateVerletLists();
-        Sys.calculateForces();
+        Sys.calculateForces(true);
         //Sys.calculateForcesBrute();
     }
     catch (const LibraryException &ex) {
@@ -147,6 +151,7 @@ int main(int argc, char* argv[]) {
         std::cout << "bad initial configuration! Terminating program." << std::endl;   
         return EXIT_FAILURE; 
     }
+
     
     
     /////////////////////////////////////
@@ -163,6 +168,22 @@ int main(int argc, char* argv[]) {
     
     std::ofstream StatisticsStream(StatisticsFile, std::ios::out | std::ios::trunc);
     FILE* PDBout{}; 
+
+
+    /////////////////////////////////////
+    /// print PDB to check intitial placement
+
+    PDBout = fopen("initial.pdb", "w");
+    Sys.printPDB(PDBout, 0, 1);
+    fclose(PDBout);
+    Sys.printStatistics(StatisticsStream, 0.0);
+
+
+
+
+
+    ////////////////////////////////////
+
     
     timeval start {}, end {};
     gettimeofday(&start, NULL); 
@@ -223,7 +244,8 @@ int main(int argc, char* argv[]) {
     gettimeofday(&end, NULL); 
     
     double realTime { ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6 };
-    std::cout << "total time: " << realTime << " , time per particle and step: " << realTime/Sys.Molecules[0].NumberOfMonomers/TotalSteps << std::endl;
+    unsigned TotalMonomers {Sys.NumberOfParticles()};
+    std::cout << "total time: " << realTime << " , time per particle and step: " << realTime/TotalMonomers/TotalSteps << std::endl;
     
     return EXIT_SUCCESS;
 

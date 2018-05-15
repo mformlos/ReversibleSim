@@ -7,7 +7,8 @@ System::System(unsigned Lx, unsigned Ly, unsigned Lz, double aK, double aRadius0
 	CaptureDistance {1.3},
 	K {aK},
 	Radius0 {aRadius0},
-    PBC{PBCon} {
+    PBC{PBCon},
+	ReversibleBonds {} {
         BoxSize[0] = Lx; 
         BoxSize[1] = Ly; 
         BoxSize[2] = Lz;
@@ -28,7 +29,8 @@ System::System(double aCutoff, double aVerletRadius, double aCapture, unsigned L
 	CaptureDistance {aCapture},
 	K {aK},
 	Radius0 {aRadius0},
-    PBC {PBCon} {
+    PBC {PBCon},
+	ReversibleBonds {}{
         BoxSize[0] = Lx; 
         BoxSize[1] = Ly; 
         BoxSize[2] = Lz;
@@ -106,7 +108,7 @@ bool System::addFunctional(std::string filename) {
     		else {
     			unsigned index;
     			makeIndex(mol, mono, index);
-    			Molecules[mol].Monomers[index].Functional=true;
+    			Molecules[mol].Monomers[mono].Functional=true;
     			ReversibleBonds[index] = -1;
     			count++;
     		}
@@ -196,7 +198,32 @@ void System::initializeVelocitiesRandom(double Temperature) {
         }
     }
 
-
+bool System::arrangeMolecules() {
+	bool overlap {true};
+	unsigned count {};
+	for (unsigned i = 0; i < Molecules.size(); i++) {
+		count = 0;
+		Vector3d COMPos {};
+		overlap = true;
+		while (overlap) {
+			COMPos(0) = Rand::real_uniform(0.0, BoxSize[0]);
+			COMPos(1) = Rand::real_uniform(0.0, BoxSize[1]);
+			COMPos(2) = Rand::real_uniform(0.0, BoxSize[2]);
+			setMoleculeCOM(i, COMPos);
+			overlap = false;
+            for (unsigned j = 0; j < i; j++) {
+            	overlap = calculateOverlap(Molecules[i], Molecules[j]);
+            	if (overlap) break;
+            }
+			count++;
+			if (count%100 == 0) {
+				std::cout << "already " << count << "trial insertions for molecule " << i << std::endl;
+			}
+		}
+	}
+	std::cout << "successfully arranged all molecules without overlap" << std::endl;
+	return !overlap;
+}
 
 void System::updateVerletLists() {
     //std::cout << "rebuilding Verlet list... " << std::endl;  
@@ -464,7 +491,22 @@ void System::calculateForcesBrute(bool calcEpot) {
 
 }
             
-
+bool System::calculateOverlap(const Molecule& first, const Molecule& second) {
+	Vector3d relPos {};
+	double radius2 {};
+	double Epot {0.0};
+	for (auto& mono_first : first.Monomers) {
+		for (auto& mono_second : second.Monomers) {
+			relPos = relative(mono_first, mono_second, BoxSize, 0.0);
+			radius2 = relPos.squaredNorm();
+			Epot = RLJ_Potential(radius2);
+			if (fabs(Epot) > 1e3 || std::isinf(Epot) || std::isnan(Epot)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 void System::setMoleculeCOM(unsigned molIndex, Vector3d newCOM) {
     if (molIndex >= Molecules.size()) {
@@ -475,10 +517,6 @@ void System::setMoleculeCOM(unsigned molIndex, Vector3d newCOM) {
     newCOM -= currentCOM; 
     for (auto& mono : Molecules[molIndex].Monomers) {
         mono.Position += newCOM; 
-        if (mono.Position(1) >= BoxSize[1]) { 
-            std::cout << mono.Position(1) << " COM to big"; 
-            exit(0); 
-        }
     }
 }
 
@@ -598,6 +636,23 @@ unsigned System::NumberOfParticles() {
 
 unsigned System::NumberOfMolecules() {return Molecules.size();}
 
+std::tuple<unsigned, unsigned> System::NumberOfBonds() {
+	unsigned Bonds {0}, IntramolecularBonds {0};
+	unsigned mol1, mol2, mono1, mono2;
+	for (auto& bond : ReversibleBonds) {
+		if (bond.second >= 0) {
+			Bonds++;
+			getIndex(bond.first, mol1, mono1);
+			getIndex(bond.second, mol2, mono2);
+			if (mol1==mol2) IntramolecularBonds++;
+		}
+	}
+	if (Bonds%2 != 0) std::cout << "uneven number of bonds!" << std::endl;
+	else Bonds /= 2;
+	IntramolecularBonds /= 2;
+	return std::make_tuple(Bonds, IntramolecularBonds);
+}
+
 double System::KineticEnergy() {
     double Ekin = 0.0; 
     for (auto& mol : Molecules) {
@@ -606,15 +661,6 @@ double System::KineticEnergy() {
     return Ekin; 
 }
 
-unsigned System::NumberOfBonds() {
-	unsigned Bonds {0};
-	for (auto& bond : ReversibleBonds) {
-		if (bond.second >= 0) Bonds++;
-	}
-	if (Bonds%2 != 0) std::cout << "uneven number of bonds!" << std::endl;
-	else Bonds /= 2;
-	return Bonds;
-}
 
 double System::PotentialEnergy() {
     double Epot {0.0}; 
@@ -660,6 +706,7 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
     int mol_count{0}; 
     fprintf(pdb, "MODEL     %d \n", step);
     for (auto& mol : Molecules) {
+    	wrapCOM(mol, BoxSize, 0.0, 0.0);
 		mol_count++;
 		int mono_count{0}; 
 		for (auto& mono : mol.Monomers) {
@@ -680,7 +727,7 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
 
 void System::printStatistics(std::ofstream& os, double time) {
     double Ekin {KineticEnergy()}, Epot {PotentialEnergy()}; 
-    unsigned Bonds {NumberOfBonds()};
+    std::tuple<unsigned, unsigned> Bonds {NumberOfBonds()};
     std::tuple<double, Matrix3d> GyrTuple {GyrationTensor()};
     Matrix3d GyrTensor {std::get<1>(GyrTuple)}; 
     os.precision(10); 
@@ -692,7 +739,9 @@ void System::printStatistics(std::ofstream& os, double time) {
     os.width(14); 
     os << Epot << " "; 
     os.width(14);
-    os << Bonds << " ";
+    os << std::get<0>(Bonds) << " ";
+    os.width(14);
+    os << std::get<1>(Bonds) << " ";
     os.width(14);
     os << std::get<0>(GyrTuple); 
     for (unsigned i = 0; i < 3; i++) {

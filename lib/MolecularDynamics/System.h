@@ -47,6 +47,7 @@ public:
 
     void calculateForces(bool calcEpot=false); 
     void calculateForcesBrute(bool calcEpot=false); 
+    bool calculateOverlap(const Molecule&, const Molecule&);
     
     void wrapMoleculesCOM(); 
     
@@ -59,6 +60,7 @@ public:
     void initializeVelocitiesRandom(double); 
     void setMoleculeCOM(unsigned, Vector3d); 
     void centerMolecule(unsigned); 
+    bool arrangeMolecules();
 
     
     void propagate(double dt, bool calcEpot=false); 
@@ -68,7 +70,7 @@ public:
     
     unsigned NumberOfParticles(); 
     unsigned NumberOfMolecules(); 
-    unsigned NumberOfBonds();
+    std::tuple<unsigned, unsigned> NumberOfBonds();
     double KineticEnergy(); 
     double PotentialEnergy(); 
     std::tuple<double, Matrix3d> GyrationTensor(); 
