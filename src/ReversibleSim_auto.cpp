@@ -105,6 +105,10 @@ int main(int argc, char* argv[]) {
     std::cout << "FunctionalFile is " << FunctionalFile << std::endl;
     std::cout << "ConfigFile is " << ConfigFile << std::endl;
 
+    ////// RANDOM ENGINE SEEDING & WARMUP //////
+    Rand::seed(Seed);
+    Rand::warmup(10000);
+
     /////////////////////////////////////
     
     /////// SYSTEM INITIALIZATION ///////
@@ -178,19 +182,10 @@ int main(int argc, char* argv[]) {
     fclose(PDBout);
     Sys.printStatistics(StatisticsStream, 0.0);
 
-
-
-
-
     ////////////////////////////////////
-
     
     timeval start {}, end {};
     gettimeofday(&start, NULL); 
-    
-    ////// RANDOM ENGINE SEEDING & WARMUP //////
-    Rand::seed(Seed); 
-    Rand::warmup(10000); 
     
     ///////////////////////////////////
     ////// MAIN SIMULATION LOOP ///////
