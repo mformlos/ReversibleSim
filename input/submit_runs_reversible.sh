@@ -23,9 +23,9 @@ currentNode=${nodes[$currentNodeIndex]}
 runcount=0
 while read rundir; do 
     echo $rundir
-    jobname="$(echo $rundir | sed 's/\/scratch-new\/formanek\/REVERSIBLE\/runs\///')"
+    jobname="$(echo $rundir | sed 's/\/scratch-new\/formanek\/REVERSIBLE\/runs-//')"
     echo $jobname
-    jobname="$( echo $jobname | sed 's/\//\-/')"
+    jobname="$( echo $jobname | sed 's/\//\-/g')"
     echo $jobname
     echo $currentNode
     sedjobname="$(echo $jobname | sed 's/\./\\\./g')"

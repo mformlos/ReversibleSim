@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     FunctionalFileName = std::string(argv[1]);
     std::ifstream inputfile(argv[2], std::ios::in);
     FractionFunctional = std::atof(argv[3]);
-    std::cout << FractionFunctional;
+    //std::cout << FractionFunctional;
     Seed = atoi(argv[4]);
     
     if (!inputfile.is_open()) {
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     }
     
     for (unsigned i = 0; i < ChainLengths.size(); i++) {
-    	std::cout << ChainLengths[i] << " " << FunctionalGroups[i] << std::endl;
+    	//std::cout << ChainLengths[i] << " " << FunctionalGroups[i] << std::endl;
     }
 
 
@@ -67,9 +67,9 @@ int main(int argc, char* argv[]) {
 				}
 				ReactiveMonos[j] = Mono;
 			}
-    	    std::cout << ReactiveMonos[j] << " ";
+    	    //std::cout << ReactiveMonos[j] << " ";
     	}
-    	std::cout << std::endl;
+    	//std::cout << std::endl;
     	std::sort(ReactiveMonos.begin(), ReactiveMonos.end());
     	for (auto& mono : ReactiveMonos) {
     		fprintf(file_functional, "%d %d \n", i, mono);
