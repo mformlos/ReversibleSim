@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
     PDBout = fopen("initial.pdb", "w");
     Sys.printPDB(PDBout, 0, 1);
     fclose(PDBout);
-    Sys.printStatistics(StatisticsStream, 0.0);
+    Sys.printStatistics(StatisticsStream, -EquilTime);
 
     ////////////////////////////////////
     
