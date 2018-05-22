@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
     OutputStepsIt = OutputSteps.begin(); 
     
     
-    std::ofstream StatisticsStream(StatisticsFile, std::ios::out | std::ios::trunc);
+    std::ofstream StatisticsStream(StatisticsFile, std::ios::out | std::ios::app);
     FILE* PDBout{}; 
 
 

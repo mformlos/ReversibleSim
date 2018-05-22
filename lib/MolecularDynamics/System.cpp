@@ -218,6 +218,9 @@ bool System::arrangeMolecules() {
 			count++;
 			if (count%100 == 0) {
 				std::cout << "already " << count << "trial insertions for molecule " << i << std::endl;
+				if (count > 100000) {
+					return false;
+				}
 			}
 		}
 	}
@@ -494,13 +497,13 @@ void System::calculateForcesBrute(bool calcEpot) {
 bool System::calculateOverlap(const Molecule& first, const Molecule& second) {
 	Vector3d relPos {};
 	double radius2 {};
-	double Epot {0.0};
+	double Force_abs {0.0};
 	for (auto& mono_first : first.Monomers) {
 		for (auto& mono_second : second.Monomers) {
 			relPos = relative(mono_first, mono_second, BoxSize, 0.0);
 			radius2 = relPos.squaredNorm();
-			Epot = RLJ_Potential(radius2);
-			if (fabs(Epot) > 1e3 || std::isinf(Epot) || std::isnan(Epot)) {
+			Force_abs = RLJ_Force(radius2);
+			if (fabs(Force_abs) > 1e4 || std::isinf(Force_abs) || std::isnan(Force_abs)) {
 				return true;
 			}
 		}
