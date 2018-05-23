@@ -1,7 +1,6 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <iostream>
-#include <omp.h>
 #include <csignal>
 #include <string>
 #include <vector>
@@ -180,7 +179,7 @@ int main(int argc, char* argv[]) {
     PDBout = fopen("initial.pdb", "w");
     Sys.printPDB(PDBout, 0, 1);
     fclose(PDBout);
-    Sys.printStatistics(StatisticsStream, -EquilTime);
+    Sys.printStatistics(StatisticsStream, -EquilTime, (int)(-EquilTime/MDStep));
 
     ////////////////////////////////////
     
@@ -224,7 +223,7 @@ int main(int argc, char* argv[]) {
         }
         
         if (m == *OutputStepsIt) {
-            Sys.printStatistics(StatisticsStream, Time); 
+            Sys.printStatistics(StatisticsStream, Time, m);
             PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");
             Sys.printPDB(PDBout, n, 1); 
             fclose(PDBout);

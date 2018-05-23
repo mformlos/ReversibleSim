@@ -63,7 +63,7 @@ int main() {
     for (unsigned long long i = 0; i < 10000000; i++) {
         if (i == *OutputStepsIt) {
             sys_test.propagate(0.001, true); 
-            sys_test.printStatistics(gyr, i*0.001);
+            sys_test.printStatistics(gyr, i*0.001, i);
             std::cout << 0.001*i << std::endl; 
             OutputStepsIt++;
         }

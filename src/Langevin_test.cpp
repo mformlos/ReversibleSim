@@ -72,7 +72,7 @@ int main() {
         if (i == *OutputStepsIt) {
             sys_test.propagateLangevin(0.001, 1., 0.05, true);
             //sys_test.propagate(0.001, true); 
-            sys_test.printStatistics(gyr, i*0.001);
+            sys_test.printStatistics(gyr, i*0.001, i);
             sys_test.printPDB(pdb,i);
             std::cout << 0.01*i << " " << sys_test.PotentialEnergy() << std::endl;
             //sys_test.printBonds();

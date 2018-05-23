@@ -25,6 +25,7 @@ public:
     bool initializePositions(std::string); 
     bool addLinks(std::string, unsigned);
     bool addFunctional(std::string, unsigned);
+    bool removeFunctional();
     
     void calculateInternalForces(); 
     void calculateSpringForces(); 

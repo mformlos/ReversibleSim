@@ -75,6 +75,7 @@ bool System::addMolecules(std::string filename, double mass) {
         return true;
     }
 
+
 bool System::addLinks(std::string filename) {
         std::ifstream file {filename};
         if (!file.is_open()) return false;
@@ -331,7 +332,8 @@ void System::breakBonds() {
 void System::makeBonds() {
 	for (auto& bondedpair : ReversibleBonds) {
 		if (bondedpair.second < 0) {
-			unsigned molIndex1, monoIndex1;
+			unsigned molIndex1 {}, monoIndex1 {};
+			std::vector<unsigned> PossibleBonds {};
 			getIndex(bondedpair.first, molIndex1, monoIndex1);
 			Particle &mono {Molecules[molIndex1].Monomers[monoIndex1]};
 			for (auto& other : mono.VerletList) {
@@ -341,10 +343,21 @@ void System::makeBonds() {
 					else relPos = other -> Position - mono.Position;
 					double radius {relPos.norm()};
 					if (radius < CaptureDistance) {
-						bondedpair.second = other -> Identifier;
-						ReversibleBonds.at(bondedpair.second) = mono.Identifier;
+						PossibleBonds.push_back(other -> Identifier); //put possible candidates in list
+						//bondedpair.second = other -> Identifier;
+						//ReversibleBonds.at(bondedpair.second) = mono.Identifier;
 					}
 				}
+			}
+			// now choose one candidate
+			if (PossibleBonds.size() > 1) {
+				int ChosenIndex {Rand::int_uniform(0, PossibleBonds.size()-1)};
+				bondedpair.second = PossibleBonds[ChosenIndex];
+				ReversibleBonds.at(bondedpair.second) = mono.Identifier;
+			}
+			else if (PossibleBonds.size() == 1) {
+				bondedpair.second = PossibleBonds[0];
+				ReversibleBonds.at(bondedpair.second) = mono.Identifier;
 			}
 		}
 	}
@@ -639,7 +652,7 @@ unsigned System::NumberOfParticles() {
 
 unsigned System::NumberOfMolecules() {return Molecules.size();}
 
-std::tuple<unsigned, unsigned> System::NumberOfBonds() {
+std::tuple<unsigned, unsigned> System::NumberOfBonds(unsigned step) {
 	unsigned Bonds {0}, IntramolecularBonds {0};
 	unsigned mol1, mol2, mono1, mono2;
 	for (auto& bond : ReversibleBonds) {
@@ -650,7 +663,10 @@ std::tuple<unsigned, unsigned> System::NumberOfBonds() {
 			if (mol1==mol2) IntramolecularBonds++;
 		}
 	}
-	if (Bonds%2 != 0) std::cout << "uneven number of bonds!" << std::endl;
+	if (Bonds%2 != 0) {
+		std::cout << "uneven number of bonds!" << std::endl;
+		printBonds(step);
+	}
 	else Bonds /= 2;
 	IntramolecularBonds /= 2;
 	return std::make_tuple(Bonds, IntramolecularBonds);
@@ -728,9 +744,9 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
     fflush(pdb);       
 }
 
-void System::printStatistics(std::ofstream& os, double time) {
+void System::printStatistics(std::ostream& os, double time, unsigned step) {
     double Ekin {KineticEnergy()}, Epot {PotentialEnergy()}; 
-    std::tuple<unsigned, unsigned> Bonds {NumberOfBonds()};
+    std::tuple<unsigned, unsigned> Bonds {NumberOfBonds(step)};
     std::tuple<double, Matrix3d> GyrTuple {GyrationTensor()};
     Matrix3d GyrTensor {std::get<1>(GyrTuple)}; 
     os.precision(10); 
@@ -756,10 +772,12 @@ void System::printStatistics(std::ofstream& os, double time) {
     os << std::endl;  
 }
 
-void System::printBonds() {
+void System::printBonds(unsigned step) {
+	std::ofstream os ("Bonds/Bonds"+std::to_string(step),std::ios::out | std::ios::trunc);
 	for (auto& bond : ReversibleBonds) {
-		std::cout << bond.first << " " << bond.second << std::endl;
+		os << bond.first << " " << bond.second << std::endl;
 	}
+	os.close();
 }
 
     

@@ -70,7 +70,7 @@ public:
     
     unsigned NumberOfParticles(); 
     unsigned NumberOfMolecules(); 
-    std::tuple<unsigned, unsigned> NumberOfBonds();
+    std::tuple<unsigned, unsigned> NumberOfBonds(unsigned);
     double KineticEnergy(); 
     double PotentialEnergy(); 
     std::tuple<double, Matrix3d> GyrationTensor(); 
@@ -79,9 +79,9 @@ public:
     
     
     void printPDB(FILE* pdb, int step, bool velocs = false); 
-    void printStatistics(std::ofstream& os, double time); 
+    void printStatistics(std::ostream& os, double time, unsigned step);
 
-    void printBonds();
+    void printBonds(unsigned);
 
 };
 

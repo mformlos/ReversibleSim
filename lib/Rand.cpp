@@ -44,6 +44,11 @@ double Rand::real_gamma(double a, double b) {
 }
 
 
+int Rand::int_uniform(int min, int max) {
+	dis_intuniform.param(uniform_int_distribution<int>::param_type(min, max));
+	return dis_intuniform(generator);
+}
+
 void Rand::seed(int s) {
     /*lc_generator.seed(s); 
     std::uint_least32_t seed_data[std::mt19937::state_size]; 

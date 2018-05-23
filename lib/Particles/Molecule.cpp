@@ -101,6 +101,13 @@ bool Molecule::addFunctional(std::string filename, unsigned molspecifier) {
 	return true;
 }
 
+bool Molecule::removeFunctional() {
+	for (auto& mono : Monomers) {
+		mono.Functional = false;
+	}
+	return true;
+}
+
 
 Vector3d Molecule::centerOfMassPosition() {
     Vector3d COMPos {Vector3d::Zero()}; 

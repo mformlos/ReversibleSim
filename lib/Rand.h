@@ -31,6 +31,7 @@ public:
 	static double real_chisquared(unsigned n);
 	//static double real_gamma(double shape);
 	static double real_gamma(double, double);
+	static int int_uniform(int, int);
 
 	static void seed(int);
 	static void seed(std::seed_seq); 
