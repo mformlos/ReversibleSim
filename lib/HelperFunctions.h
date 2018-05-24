@@ -28,6 +28,7 @@ Type extractParameter(std::string key, std::ifstream& inputfile, bool& found) {
 }
 
 bool initializeStepVector(std::vector<unsigned long long>& vec, std::string filename) {
+	vec.clear();
     std::ifstream file (filename, std::ios::in);
     if (!file.is_open()) {
         return false; 
@@ -57,6 +58,7 @@ struct ConstraintUpdate {
 
 bool initializeForceUpdateVector(std::vector<ForceUpdate>& vec, std::string filename) {
     std::ifstream file (filename, std::ios::in);
+    vec.clear();
     if (!file.is_open()) {
         return false; 
     }
@@ -71,6 +73,7 @@ bool initializeForceUpdateVector(std::vector<ForceUpdate>& vec, std::string file
 
 bool initializeConstraintUpdateVector(std::vector<ConstraintUpdate>& vec, std::string filename) {
     std::ifstream file (filename, std::ios::in);
+    vec.clear();
     if (!file.is_open()) {
         return false; 
     }
@@ -81,3 +84,36 @@ bool initializeConstraintUpdateVector(std::vector<ConstraintUpdate>& vec, std::s
     } 
     return true; 
 } 
+
+struct TopologyAndConfigPool {
+	std::string TopologyFile;
+	std::string ConfigPoolFile;
+	TopologyAndConfigPool(std::string Topology, std::string ConfigPool) :
+		TopologyFile {Topology},
+		ConfigPoolFile {ConfigPool} {}
+};
+
+
+bool fillConfigPool(std::vector<std::string>& vec, std::string filename) {
+	vec.clear();
+	std::ifstream file (filename, std::ios::in);
+	if (!file.is_open()) return false;
+	std::string configfile {};
+	while(file >> configfile) vec.push_back(configfile);
+	return true;
+}
+
+bool fillConfigPoolVector(std::vector<std::string>& vec, std::ifstream& inputfile) {
+	vec.clear();
+    inputfile.clear();
+    inputfile.seekg(0, std::ios::beg);
+    std::string line{}, key{"TopologyConfigPool:"};
+    while (getline(inputfile, line)){
+        if (line.find(key) != std::string::npos) {
+            break;
+        }
+    }
+	std::string configfile {};
+	while(inputfile >> configfile) vec.push_back(configfile);
+	return true;
+}

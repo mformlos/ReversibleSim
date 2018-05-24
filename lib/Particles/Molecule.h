@@ -2,6 +2,7 @@
 #define MOLECULE_H_
 
 #include "Particle.h"
+#include "Rand.h"
 #include <fstream>
 
 class Molecule {
@@ -21,6 +22,7 @@ public:
     void setChainBonds(); 
     void setLink(unsigned, unsigned); 
     void translate(Vector3d); 
+    void randomRotation();
     void removeAngularMomentum(); 
     bool initializePositions(std::string); 
     bool addLinks(std::string, unsigned);

@@ -47,6 +47,7 @@ public:
 
     void calculateForces(bool calcEpot=false); 
     void calculateForcesBrute(bool calcEpot=false); 
+    double calculateIntermolecularEnergy(unsigned, unsigned);
     bool calculateOverlap(const Molecule&, const Molecule&);
     
     void wrapMoleculesCOM(); 

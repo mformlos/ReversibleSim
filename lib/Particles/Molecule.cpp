@@ -61,7 +61,7 @@ bool Molecule::initializePositions(std::string filename) {
              }
         }
     }
-    //std::cout << "all " << count << " monomers were initialized" << std::endl; 
+    //std::cout << "all " << count << " monomers were initialized" << std::endl;
     if (file >> dump >> dump >> dump >> dump >> dump >> x >> y >> z >> dump >> dump >> dump) std::cout << "...but there is more data..." << std::endl; 
     return true; 
 }
@@ -131,6 +131,30 @@ void Molecule::translate(Vector3d vec) {
     for (auto& mono : Monomers) {
         mono.Position += vec; 
     }
+}
+
+void Molecule::randomRotation() {
+	Matrix3d Rotation;
+	Vector4d q {Rand::real_uniform(), Rand::real_uniform(), Rand::real_uniform(), Rand::real_uniform()};
+	q /= q.norm();
+	double q0sq {q(0)*q(0)}, q1sq {q(1)*q(1)}, q2sq {q(2)*q(2)}, q3sq {q(3)*q(3)};
+	Rotation(0,0) = q0sq + q1sq - q2sq - q3sq;
+	Rotation(0,1) = 2.*(q(1)*q(2) - q(0)*q(3));
+	Rotation(0,2) = 2.*(q(1)*q(3) + q(0)*q(2));
+	Rotation(1,0) = 2.*(q(1)*q(2) + q(0)*q(3));
+	Rotation(1,1) = q0sq - q1sq + q2sq - q3sq;
+	Rotation(1,2) = 2.*(q(2)*q(3) - q(0)*q(1));
+	Rotation(2,0) = 2.*(q(1)*q(3) - q(0)*q(2));
+	Rotation(2,1) = 2.*(q(2)*q(3) + q(0)*q(1));
+	Rotation(2,2) = q0sq - q1sq - q2sq + q3sq;
+
+	Vector3d COMPos {centerOfMassPosition()};
+
+	for (auto& mono : Monomers) {
+		mono.Position -= COMPos;
+		mono.Position = Rotation*mono.Position;
+		mono.Position += COMPos;
+	}
 }
 
 void Molecule::removeAngularMomentum() {

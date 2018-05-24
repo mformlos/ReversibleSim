@@ -506,7 +506,22 @@ void System::calculateForcesBrute(bool calcEpot) {
     }
 
 }
-            
+
+double System::calculateIntermolecularEnergy(unsigned firstIndex, unsigned secondIndex) {
+	double Energy {0.0};
+	Vector3d relPos {};
+	double radius2 {};
+	for (auto& mono_first : Molecules[firstIndex].Monomers) {
+		for (auto& mono_second : Molecules[secondIndex].Monomers) {
+			if (PBC) relPos = relative(mono_first, mono_second, BoxSize, 0.0);
+			else relPos = mono_second.Position - mono_first.Position;
+			radius2 = relPos.squaredNorm();
+			Energy += RLJ_Potential(radius2);
+		}
+	}
+	return Energy;
+}
+
 bool System::calculateOverlap(const Molecule& first, const Molecule& second) {
 	Vector3d relPos {};
 	double radius2 {};

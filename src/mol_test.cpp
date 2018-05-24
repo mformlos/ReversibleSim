@@ -18,7 +18,7 @@ int main() {
     initializeStepVector(OutputSteps, "input/teststeps");
     OutputStepsIt = OutputSteps.begin();    
     
-    std::vector<Vector3d> COMPos;
+    std::vector<Vector3d> COMPos {};
     for (auto& mol : sys_test.Molecules) {
         COMPos.push_back(mol.centerOfMassPosition()); 
     }
