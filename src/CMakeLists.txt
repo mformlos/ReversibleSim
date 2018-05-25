@@ -13,3 +13,6 @@ target_link_libraries(ReversibleSim_auto Random Molecule Particle System)
 
 add_executable(Widom Widom.cpp)
 target_link_libraries(Widom Random System)
+
+add_executable(Widom_parallel Widom_parallel.cpp)
+target_link_libraries(Widom_parallel Random Molecule)

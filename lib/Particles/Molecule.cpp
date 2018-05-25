@@ -311,3 +311,17 @@ Matrix3d Molecule::StressTensor() {
 
 }
 
+
+double calculateIntermolecularEnergy (const Molecule& first, const Molecule& second) {
+	double Energy {0.0};
+		Vector3d relPos {};
+		double radius2 {};
+		for (auto& mono_first : first.Monomers) {
+			for (auto& mono_second : second.Monomers) {
+				relPos = mono_second.Position - mono_first.Position;
+				radius2 = relPos.squaredNorm();
+				Energy += RLJ_Potential(radius2);
+			}
+		}
+		return Energy;
+}

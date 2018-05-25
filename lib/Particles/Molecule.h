@@ -47,6 +47,8 @@ public:
     
 }; 
 
+double calculateIntermolecularEnergy(const Molecule&, const Molecule&);
+
 
 
 #endif
