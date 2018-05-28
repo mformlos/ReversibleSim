@@ -8,7 +8,7 @@ from collections import namedtuple
 
 
 random.seed()
-RunsPerParameter = 42
+RunsPerParameter = 16
 Parameter = namedtuple("Parameters", "Box, Temperature, Gamma, BondPotential, FunctionalFraction, MDStep, SimTime, EquilTime")
 
 BondPotential = namedtuple("BondPotential", ["ConstantK", "ConstantR0"])
@@ -18,16 +18,16 @@ ParameterSets = []
 
 ParameterSets.append(Parameter(Box(200, 200, 200), 1.0, 0.05, [BondPotential(24.6, 1.38), BondPotential(29.6, 1.448), BondPotential(33.7, 1.477)], 0.1, 0.005, 5000000.0, 10000.))
 
+ParameterSets.append(Parameter(Box(200, 200, 200), 1.0, 0.05, [BondPotential(24.6, 1.38)], 0.3, 0.005, 5000000.0, 10000.))
+
 homepath="/home/formanek/REVERSIBLE/"
 clusterpath="/scratch-new/formanek/REVERSIBLE/"
 
-runparentdir=clusterpath+"runs/"
 
 submit_files =open("runs_to_submit.dat", "w")
 if not os.path.exists(clusterpath): 
     os.makedirs(clusterpath)
-if not os.path.exists(runparentdir):
-    os.makedirs(runparentdir)
+
     
 for paramSet in ParameterSets: 
     Lx = paramSet.Box.Lx
@@ -39,6 +39,12 @@ for paramSet in ParameterSets:
     SimTime = paramSet.SimTime
     EquilTime = paramSet.EquilTime
     FunctionalFraction = paramSet.FunctionalFraction
+    runparentdir = clusterpath+"runs-f-"+str(FunctionalFraction)+"-rho-0.0/"
+    if not os.path.exists(runparentdir):
+        os.makedirs(runparentdir)
+    else: 
+        printf("directory "+runparentdir+"already exists, exiting")
+        sys.exit()
     for Potential in paramSet.BondPotential: 
         ConstantK = Potential.ConstantK
         ConstantR0 = Potential.ConstantR0
@@ -54,6 +60,7 @@ for paramSet in ParameterSets:
                 break 
             os.makedirs(directory) 
             os.makedirs(directory+"/configs")
+            os.makedirs(directory+"/Bonds")
 
             shutil.copyfile(homepath+"input/SCNPs/Reversible-config", directory+"/config")
 

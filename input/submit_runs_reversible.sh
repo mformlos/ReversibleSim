@@ -15,7 +15,7 @@ CPUsPerTask=1
 CPUsPerNode=64
 TasksPerNode=$[$CPUsPerNode/$CPUsPerTask]
 echo "will submit $TasksPerNode per node"  
-nodes=("8" "9")
+nodes=("17")
 
 mkdir -p slurm
 currentNodeIndex=0
@@ -45,7 +45,7 @@ while read rundir; do
     fi 
     sbatch slurm/$jobname.slurm 
     echo $rundir >>submitted_runs.dat
-    sleep 20
+    sleep 10
 done <runs_to_submit.dat
 
 

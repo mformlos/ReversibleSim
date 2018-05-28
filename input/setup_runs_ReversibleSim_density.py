@@ -9,7 +9,7 @@ from collections import namedtuple
 
 
 random.seed()
-RunsPerParameter = 7
+RunsPerParameter = 16
 Parameter = namedtuple("Parameters", "Temperature, Gamma, BondPotential, FunctionalFraction, Density, Molecules, MDStep, SimTime, EquilTime")
 
 BondPotential = namedtuple("BondPotential", ["ConstantK", "ConstantR0", "Rg"])
@@ -17,9 +17,13 @@ Box = namedtuple("Box", ["Lx", "Ly", "Lz"])
 
 ParameterSets = []
 
-ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(33.7, 1.477, 9.35)], 0.1, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 10, 0.005, 5000000.0, 10000.))
+#ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(33.7, 1.477, 9.35)], 0.1, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 10, 0.005, 5000000.0, 10000.))
 
-ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(24.6, 1.38, 10.7)], 0.3, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 10, 0.005, 5000000.0, 10000.))
+ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(24.6, 1.38, 10.7)], 0.3, [0.1, 0.2], 10, 0.005, 5000000.0, 10000.))
+
+ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(33.7, 1.477, 9.35)], 0.1, [0.1, 0.2], 10, 0.005, 5000000.0, 10000.))
+
+#ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(24.6, 1.38, 10.7)], 0.3, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 10, 0.005, 5000000.0, 10000.))
 
 homepath="/home/formanek/REVERSIBLE/"
 clusterpath="/scratch-new/formanek/REVERSIBLE/"
@@ -65,6 +69,7 @@ for paramSet in ParameterSets:
                     break 
                 os.makedirs(directory) 
                 os.makedirs(directory+"/configs")
+                os.makedirs(directory+"/Bonds")
 
                 shutil.copyfile(homepath+"input/SCNPs/Reversible-config-N"+str(Molecules), directory+"/config")
 
