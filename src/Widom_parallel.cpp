@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
 	double Rmax {50}, DeltaR {0.1};
 	std::string ParameterFile {}, MoleculeFile {}, HistogramFile {};
 	std::vector<std::string> ConfigPoolFiles{}, ConfigFiles1 {}, ConfigFiles2 {};
+	std::vector<std::pair<size_t, size_t>> TopologyPairs {};
 	std::map<double, double> RadialDistHist {};
 	std::map<double, double>::iterator RadialDistHistIter {};
 
@@ -102,29 +103,42 @@ int main(int argc, char* argv[]) {
 		RadialDistHist[Distance] = 0.0;
 	}
 
+	//// initialize TopologyPairs to loop over
+	for (size_t Topol1 = 0; Topol1 < NTopols; Topol1++) {
+		for (size_t Topol2 = Topol1; Topol2 < NTopols; Topol2++) {
+			TopologyPairs.push_back(std::pair<size_t, size_t>(Topol1, Topol2));
+		}
+	}
+
+	//// test TopologyPairs
+	for (auto& pair : TopologyPairs) {
+		std::cout << pair.first << " " << pair.second << std::endl;
+	}
+
+
 	timeval start {}, end {};
 	gettimeofday(&start, NULL);
 
-#pragma omp parallel private(ConfigFiles1, ConfigFiles2)
+	#pragma omp parallel private(ConfigFiles1, ConfigFiles2)
 	{
 		if (omp_get_thread_num()==0) {
 			std::cout << "using " << omp_get_num_threads() << " threads " << std::endl;
 			std::cout << "on " << omp_get_num_procs() << " processors " << std::endl;
 		}
 
-	//// loop over different topologies of molecule 1
-	#pragma omp for
-	for (size_t Topol1 = 0; Topol1 < NTopols; Topol1++) {
-		fillConfigPool(ConfigFiles1, ConfigPoolFiles[Topol1]);
-		std::map<double, double> RadialDistHist_local {};
-		size_t Count_local {0};
-		for (double Distance = 0.0; Distance < Rmax; Distance += DeltaR) {
-			RadialDistHist_local[Distance] = 0.0;
-		}
-		//// loop over different topologies of molecule 2
-		for (size_t Topol2 = Topol1; Topol2 < NTopols; Topol2++) {
-			fillConfigPool(ConfigFiles2, ConfigPoolFiles[Topol2]);
+		//// loop over different topologies of molecule 1 and 2
+		#pragma omp for
+		for (size_t TopolPair = 0; TopolPair < TopologyPairs.size(); TopolPair++) {
+			size_t Topol1 { TopologyPairs[TopolPair].first };
+			size_t Topol2 { TopologyPairs[TopolPair].second };
 
+			fillConfigPool(ConfigFiles1, ConfigPoolFiles[Topol1]);
+			fillConfigPool(ConfigFiles2, ConfigPoolFiles[Topol2]);
+			std::map<double, double> RadialDistHist_local {};
+			size_t Count_local {0};
+			for (double Distance = 0.0; Distance < Rmax; Distance += DeltaR) {
+				RadialDistHist_local[Distance] = 0.0;
+			}
 			//// loop over different configurations of molecule 1
 			for (size_t config1 = 0; config1 < ConfigFiles1.size(); config1++)  {
 				Molecule Molecule1(NumberOfMonomers, 0);
@@ -166,15 +180,13 @@ int main(int argc, char* argv[]) {
 					Count_local++;
 				}
 			}
-		}
-		#pragma omp atomic
-		Count += Count_local;
-		for (auto& Histvalue : RadialDistHist_local) {
 			#pragma omp atomic
-			RadialDistHist.at(Histvalue.first) += Histvalue.second;
+			Count += Count_local;
+			for (auto& Histvalue : RadialDistHist_local) {
+				#pragma omp atomic
+				RadialDistHist.at(Histvalue.first) += Histvalue.second;
+			}
 		}
-
-	}
 	}
 	for (auto& Histvalue : RadialDistHist) {
 		Histvalue.second /= Count;
