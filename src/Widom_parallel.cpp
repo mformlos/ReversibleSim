@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 	bool ParameterInitialized {false};
 	size_t NInsertions {}, NConfigs {}, NTopols {}, Count {0}, NIntervals {};
 	double Rmax {50}, DeltaR {0.1};
-	std::string ParameterFile {}, MoleculeFile {}, HistogramFile {};
+	std::string ParameterFile {}, HistogramFile {};
 	std::vector<std::string> ConfigPoolFiles{}, ConfigFiles1 {}, ConfigFiles2 {};
 	std::vector<std::pair<size_t, size_t>> TopologyPairs {};
 	std::map<double, double> RadialDistHist {};
@@ -64,8 +64,6 @@ int main(int argc, char* argv[]) {
 	if (!ParameterInitialized) return EXIT_FAILURE;
 	Seed = extractParameter<double>("Seed", inputfile, ParameterInitialized);
 	if (!ParameterInitialized) return EXIT_FAILURE;
-	MoleculeFile = extractParameter<std::string>("MoleculeFile", inputfile, ParameterInitialized);
-	if (!ParameterInitialized) return EXIT_FAILURE;
 	HistogramFile = extractParameter<std::string>("HistogramFile", inputfile, ParameterInitialized);
 	if (!ParameterInitialized) return EXIT_FAILURE;
 
@@ -82,7 +80,6 @@ int main(int argc, char* argv[]) {
 	std::cout << "DeltaR is " << DeltaR << std::endl;
 	std::cout << "Number of Insertions per Config is " << NInsertions << std::endl;
 	std::cout << "RNG seed is " << Seed << std::endl;
-	std::cout << "MoleculeFile is " << MoleculeFile << std::endl;
 	std::cout << "HistogramFile is " << HistogramFile << std::endl;
 	std::cout << "Number of distinct topologies is " << ConfigPoolFiles.size() << std::endl;
 
