@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	unsigned Seed {}, NumberOfMonomers{};
 	bool ParameterInitialized {false};
 	size_t NInsertions {}, NConfigs {}, NTopols {}, Count {0}, NIntervals {};
-	double Rmax {50}, DeltaR {0.1};
+	double Rmax {50}, Rmin {0.0}, DeltaR {0.1};
 	std::string ParameterFile {}, HistogramFile {};
 	std::vector<std::string> ConfigPoolFiles{}, ConfigFiles1 {}, ConfigFiles2 {};
 	std::vector<std::pair<size_t, size_t>> TopologyPairs {};
@@ -58,6 +58,8 @@ int main(int argc, char* argv[]) {
 	if (!ParameterInitialized) return EXIT_FAILURE;
 	NInsertions = extractParameter<size_t>("Insertions", inputfile, ParameterInitialized);
 	if (!ParameterInitialized) return EXIT_FAILURE;
+	Rmin = extractParameter<double>("Rmin", inputfile, ParameterInitialized);
+	if (!ParameterInitialized) return EXIT_FAILURE;
 	Rmax = extractParameter<double>("Rmax", inputfile, ParameterInitialized);
 	if (!ParameterInitialized) return EXIT_FAILURE;
 	DeltaR = extractParameter<double>("DeltaR", inputfile, ParameterInitialized);
@@ -69,7 +71,7 @@ int main(int argc, char* argv[]) {
 
 	fillConfigPoolVector(ConfigPoolFiles, inputfile);
 	NTopols = ConfigPoolFiles.size();
-	NIntervals = (size_t)(Rmax/DeltaR);
+	NIntervals = (size_t)((Rmax-Rmin)/DeltaR);
 	inputfile.close();
 
 	/////////////////////////////////////////
@@ -96,7 +98,7 @@ int main(int argc, char* argv[]) {
 	////////////
 
 	//// initialize histogram of radial distribution function
-	for (double Distance = 0.0; Distance < Rmax; Distance += DeltaR) {
+	for (double Distance = Rmin; Distance < Rmax; Distance += DeltaR) {
 		RadialDistHist[Distance] = 0.0;
 	}
 
@@ -133,7 +135,7 @@ int main(int argc, char* argv[]) {
 			fillConfigPool(ConfigFiles2, ConfigPoolFiles[Topol2]);
 			std::map<double, double> RadialDistHist_local {};
 			size_t Count_local {0};
-			for (double Distance = 0.0; Distance < Rmax; Distance += DeltaR) {
+			for (double Distance = Rmin; Distance < Rmax; Distance += DeltaR) {
 				RadialDistHist_local[Distance] = 0.0;
 			}
 			//// loop over different configurations of molecule 1
@@ -191,7 +193,7 @@ int main(int argc, char* argv[]) {
 
 	std::ofstream Output(HistogramFile, std::ios::out | std::ios::trunc);
 	size_t samples {0};
-	for (double Distance = 0.0; Distance < Rmax; Distance += DeltaR) {
+	for (double Distance = Rmin; Distance < Rmax; Distance += DeltaR) {
 		Output << Distance << " " << RadialDistHist.at(Distance) << std::endl;
 		samples++;
 	}
