@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     unsigned long long TotalSteps{}, n {}, m {}; 
     double MDStep{}, SimTime{}, EquilTime{}, Temperature{}, Time{}, Gamma {}, ConstantK {}, ConstantR0 {};
     bool ParameterInitialized{}, Equilibrated{false};
-    std::string OutputStepFile{}, MoleculeFile{}, FunctionalFile{}, ConfigFile{}, StatisticsFile{}, ConfigOutFile{};
+    std::string OutputStepFile{}, MoleculeFile{}, FunctionalFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{};
     std::vector<unsigned long long> OutputSteps {};
     std::vector<unsigned long long>::iterator OutputStepsIt{};
     
@@ -76,6 +76,8 @@ int main(int argc, char* argv[]) {
     if (!ParameterInitialized) return EXIT_FAILURE; 
     ConfigFile = extractParameter<std::string>("ConfigFile", inputfile, ParameterInitialized);
     if (!ParameterInitialized) return EXIT_FAILURE;
+    VelocFile = extractParameter<std::string>("VelocFile", inputfile, ParameterInitialized);
+    if (!ParameterInitialized) return EXIT_FAILURE;
     StatisticsFile = extractParameter<std::string>("StatisticsFile", inputfile, ParameterInitialized);
     if (!ParameterInitialized) return EXIT_FAILURE;
     ConfigOutFile = extractParameter<std::string>("ConfigOutFile", inputfile, ParameterInitialized);
@@ -98,9 +100,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Constant R0 is " << ConstantR0 << std::endl;
     std::cout << "MDStep is " << MDStep << std::endl;
     std::cout << "RNG seed is " << Seed << std::endl; 
+    std::cout << "Starttime is " << Time << std::endl;
+    std::cout << "Totaltime is " << SimTime << std::endl;
     std::cout << "Equiltime is " << EquilTime << std::endl;
     std::cout << "OutputStepFile is " << OutputStepFile << std::endl;
     std::cout << "MoleculeFile is " << MoleculeFile << std::endl;
+    std::cout << "VelocityFile is " << VelocFile << std::endl;
     std::cout << "FunctionalFile is " << FunctionalFile << std::endl;
     std::cout << "ConfigFile is " << ConfigFile << std::endl;
 
@@ -127,35 +132,44 @@ int main(int argc, char* argv[]) {
         std::cout << "ConfigFile does not exist or contains too little lines!" << std::endl; 
         return EXIT_FAILURE; 
     } 
- 
-    Sys.initializeVelocitiesRandom(Temperature); 
     
-    bool arranged {true};
-    if (Sys.NumberOfMolecules() == 1)  {
-        Sys.centerMolecule(0);
-    }
-    else if (Sys.NumberOfMolecules() > 1){
-        arranged = Sys.arrangeMolecules();
-    }
-    if (!arranged) {
-    	std::cout << "not able to place molecules! Terminating program." << std::endl;
-     	return EXIT_FAILURE;
-    }
-    
-    try {
-    	Sys.breakBonds();
-    	Sys.makeBonds();
-        Sys.updateVerletLists();
-        Sys.calculateForces(true);
-        //Sys.calculateForcesBrute();
-    }
-    catch (const LibraryException &ex) {
-        std::cout << ex.what() << std::endl; 
-        std::cout << "bad initial configuration! Terminating program." << std::endl;   
-        return EXIT_FAILURE; 
+    if (VelocFile == "RANDOM") Sys.initializeVelocitiesRandom(Temperature);
+    else {
+    	if (!Sys.initializeVelocities(VelocFile)) {
+    		std::cout << "VelocFile does not exist or contains too little lines!" << std::endl;
+    		return EXIT_FAILURE;
+    	}
     }
 
+    if (Time == 0.0) {
+    	bool arranged {true};
+    	if (Sys.NumberOfMolecules() == 1)  {
+    		Sys.centerMolecule(0);
+    	}
+		else if (Sys.NumberOfMolecules() > 1){
+			arranged = Sys.arrangeMolecules();
+		}
+		if (!arranged) {
+			std::cout << "not able to place molecules! Terminating program." << std::endl;
+			return EXIT_FAILURE;
+		}
+    }
     
+    
+	try {
+		Sys.breakBonds();
+		Sys.makeBonds();
+		Sys.updateVerletLists();
+		Sys.calculateForces(true);
+		//Sys.calculateForcesBrute();
+	}
+	catch (const LibraryException &ex) {
+		std::cout << ex.what() << std::endl;
+		std::cout << "bad initial configuration! Terminating program." << std::endl;
+		return EXIT_FAILURE;
+	}
+
+
     
     /////////////////////////////////////
     
@@ -175,12 +189,12 @@ int main(int argc, char* argv[]) {
 
     /////////////////////////////////////
     /// print PDB to check intitial placement
-
-    PDBout = fopen("initial.pdb", "w");
-    Sys.printPDB(PDBout, 0, 1);
-    fclose(PDBout);
-    Sys.printStatistics(StatisticsStream, -EquilTime);
-
+    if (Time < EquilTime) {
+		PDBout = fopen("initial.pdb", "w");
+		Sys.printPDB(PDBout, 0, 1);
+		fclose(PDBout);
+		Sys.printStatistics(StatisticsStream, -EquilTime);
+    }
     ////////////////////////////////////
     
     timeval start {}, end {};
@@ -188,8 +202,17 @@ int main(int argc, char* argv[]) {
     
     ///////////////////////////////////
     ////// MAIN SIMULATION LOOP ///////
-    m = -TotalSteps; 
-    for (n = 0; n <= TotalSteps; n++, m++) {
+    if (Time < EquilTime) {
+    	m = -TotalSteps;
+    	n = 0;
+    }
+    else {
+    	n = (unsigned long long) (Time/MDStep);
+    	m = n;
+    	Equilibrated = true;
+    }
+    std::cout << "m: " << m << ", n: " << n << "next output at m = " << *OutputStepsIt << std::endl;
+    for (; n <= TotalSteps; n++, m++) {
         Time += MDStep; 
         try {
             if (m == *OutputStepsIt) Sys.propagateLangevin(MDStep, Temperature, Gamma, true);
