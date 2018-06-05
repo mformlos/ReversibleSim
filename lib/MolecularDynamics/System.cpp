@@ -667,7 +667,7 @@ unsigned System::NumberOfParticles() {
 
 unsigned System::NumberOfMolecules() {return Molecules.size();}
 
-std::tuple<unsigned, unsigned> System::NumberOfBonds(unsigned step) {
+std::tuple<unsigned, unsigned> System::NumberOfBonds() {
 	unsigned Bonds {0}, IntramolecularBonds {0};
 	unsigned mol1, mol2, mono1, mono2;
 	for (auto& bond : ReversibleBonds) {
@@ -680,7 +680,6 @@ std::tuple<unsigned, unsigned> System::NumberOfBonds(unsigned step) {
 	}
 	if (Bonds%2 != 0) {
 		std::cout << "uneven number of bonds!" << std::endl;
-		printBonds(step);
 	}
 	else Bonds /= 2;
 	IntramolecularBonds /= 2;
@@ -759,9 +758,9 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
     fflush(pdb);       
 }
 
-void System::printStatistics(std::ostream& os, double time, unsigned step) {
+void System::printStatistics(std::ostream& os, double time) {
     double Ekin {KineticEnergy()}, Epot {PotentialEnergy()}; 
-    std::tuple<unsigned, unsigned> Bonds {NumberOfBonds(step)};
+    std::tuple<unsigned, unsigned> Bonds {NumberOfBonds()};
     std::tuple<double, Matrix3d> GyrTuple {GyrationTensor()};
     Matrix3d GyrTensor {std::get<1>(GyrTuple)}; 
     os.precision(10); 
@@ -787,12 +786,10 @@ void System::printStatistics(std::ostream& os, double time, unsigned step) {
     os << std::endl;  
 }
 
-void System::printBonds(unsigned step) {
-	std::ofstream os ("Bonds/Bonds"+std::to_string(step),std::ios::out | std::ios::trunc);
+void System::printBonds(std::ofstream& os) {
 	for (auto& bond : ReversibleBonds) {
-		os << bond.first << " " << bond.second << std::endl;
+		if (bond.second >= 0) os << bond.first << " " << bond.second << std::endl;
 	}
-	os.close();
 }
 
     

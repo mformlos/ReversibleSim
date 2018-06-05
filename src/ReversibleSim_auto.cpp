@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
     PDBout = fopen("initial.pdb", "w");
     Sys.printPDB(PDBout, 0, 1);
     fclose(PDBout);
-    Sys.printStatistics(StatisticsStream, -EquilTime, (int)(-EquilTime/MDStep));
+    Sys.printStatistics(StatisticsStream, -EquilTime);
 
     ////////////////////////////////////
     
@@ -223,10 +223,13 @@ int main(int argc, char* argv[]) {
         }
         
         if (m == *OutputStepsIt) {
-            Sys.printStatistics(StatisticsStream, Time, m);
+            Sys.printStatistics(StatisticsStream, Time);
             PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");
             Sys.printPDB(PDBout, n, 1); 
             fclose(PDBout);
+        	std::ofstream Bonds ("Bonds/Bonds"+std::to_string(m),std::ios::out | std::ios::trunc);
+        	Sys.printBonds(Bonds);
+        	Bonds.close();
             std::cout << Time <<  std::endl; 
             OutputStepsIt++;        
         }
