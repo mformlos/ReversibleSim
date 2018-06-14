@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signalHandler); 
     unsigned Lx{}, Ly{}, Lz{}, Seed {};  
     unsigned long long TotalSteps{}, n {}, m {}; 
-    double MDStep{}, SimTime{}, EquilTime{}, Temperature{}, Time{}, Gamma {}, ConstantK {}, ConstantR0 {};
+    double MDStep{}, SimTime{}, EquilTime{}, Temperature{}, Time{}, Density {}, Gamma {}, ConstantK {}, ConstantR0 {};
     bool ParameterInitialized{}, Equilibrated{false};
     std::string OutputStepFile{}, MoleculeFile{}, FunctionalFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{};
     std::vector<unsigned long long> OutputSteps {};
@@ -122,7 +122,10 @@ int main(int argc, char* argv[]) {
         std::cout << "MoleculeFile does not exist!" << std::endl; 
         return EXIT_FAILURE;     
     }
-    
+
+    Density = double(Sys.NumberOfParticles())/double(Sys.BoxSize[0]*Sys.BoxSize[1]*Sys.BoxSize[2]);
+    std::cout << "Number of chains: " << Sys.NumberOfMolecules() << ", Number of monomers: " << Sys.NumberOfParticles() << std::endl;
+    std::cout << "Number density of the system: " << Density << std::endl;
     if (!Sys.addFunctional(FunctionalFile)) {
         std::cout << "LinkFile does not exist!" << std::endl; 
         return EXIT_FAILURE; 
@@ -147,15 +150,29 @@ int main(int argc, char* argv[]) {
     		Sys.centerMolecule(0);
     	}
 		else if (Sys.NumberOfMolecules() > 1){
-			arranged = Sys.arrangeMolecules();
+			//arranged = Sys.arrangeMolecules();
+			arranged = Sys.arrangeMoleculesFCC();
 		}
 		if (!arranged) {
 			std::cout << "not able to place molecules! Terminating program." << std::endl;
 			return EXIT_FAILURE;
 		}
     }
-    
-    
+
+    std::ofstream StatisticsStream(StatisticsFile, std::ios::out | std::ios::app);
+	FILE* PDBout{};
+
+    /////////////////////////////////////
+	/// print PDB to check intitial placement
+	if (Time < EquilTime) {
+		PDBout = fopen("initial.pdb", "w");
+		Sys.printPDB(PDBout, 0, 1);
+		fclose(PDBout);
+		Sys.printStatistics(StatisticsStream, -EquilTime);
+	}
+	////////////////////////////////////
+
+
 	try {
 		Sys.breakBonds();
 		Sys.makeBonds();
@@ -181,22 +198,8 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "Output will be done " << OutputSteps.size() << " times. " << std::endl; 
     OutputStepsIt = OutputSteps.begin(); 
-    
-    
-    std::ofstream StatisticsStream(StatisticsFile, std::ios::out | std::ios::app);
-    FILE* PDBout{}; 
 
 
-    /////////////////////////////////////
-    /// print PDB to check intitial placement
-    if (Time < EquilTime) {
-		PDBout = fopen("initial.pdb", "w");
-		Sys.printPDB(PDBout, 0, 1);
-		fclose(PDBout);
-		Sys.printStatistics(StatisticsStream, -EquilTime);
-    }
-    ////////////////////////////////////
-    
     timeval start {}, end {};
     gettimeofday(&start, NULL); 
     

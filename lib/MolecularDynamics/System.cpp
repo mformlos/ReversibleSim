@@ -133,13 +133,13 @@ bool System::initializePositions(std::string filename) {
                         count++;
                     }
                     else {
-                        std::cout << "only " << count << " monomers were initialized" << std::endl;
+                        std::cout << "only " << count << " monomer positions were initialized" << std::endl;
                         return false;
                     }
                 }
             }
         }
-        std::cout << "all " << count << " monomers were initialized" << std::endl;
+        std::cout << "all " << count << " monomer positions were initialized" << std::endl;
         if (file >> x >> y >> z) std::cout << "...but there is more data..." << std::endl;
         return true;
     }
@@ -159,13 +159,13 @@ bool System::initializeVelocities(std::string filename) {
                         count++;
                     }
                     else {
-                        std::cout << "only " << count << " monomers were initialized" << std::endl;
+                        std::cout << "only " << count << " monomer velocities were initialized" << std::endl;
                         return false;
                     }
                 }
             }
         }
-        std::cout << "all " << count << " monomers were initialized" << std::endl;
+        std::cout << "all " << count << " monomer velocities were initialized" << std::endl;
         if (file >> x >> y >> z) std::cout << "...but there is more data..." << std::endl;
         return true;
     }
@@ -227,6 +227,66 @@ bool System::arrangeMolecules() {
 	}
 	std::cout << "successfully arranged all molecules without overlap" << std::endl;
 	return !overlap;
+}
+
+bool System::arrangeMoleculesFCC() {
+	bool overlap {true};
+	unsigned N {};
+	unsigned magic {};
+	for (unsigned i = 0; i < 10; i++) {
+		N = 4*pow(i,3);
+		if (N >= Molecules.size()){
+			magic = i;
+			break;
+		}
+	}
+	//magic = (unsigned)(pow(Molecules.size()/4, 1./3.));
+	unsigned L = *std::min_element(BoxSize.begin(), BoxSize.end());
+	double dL = double(L)/(2.*magic);
+	unsigned count {0};
+	Vector3d COMPos {};
+	std::cout << "trying to initialize fcc lattice... \n magic: " << magic << ", dL: " << dL << std::endl;
+	for (unsigned i = 0; i < 2*magic; i++) {
+		for (unsigned j = 0; j < 2*magic; j++) {
+			for (unsigned k = 0; k < 2*magic; k++) {
+				if ((i+j+k)%2 == 0) {
+					COMPos(0) = i*dL;
+					COMPos(1) = j*dL;
+					COMPos(2) = k*dL;
+					setMoleculeCOM(count, COMPos);
+					overlap = true;
+					while (overlap) {
+						Molecules[count].randomRotation();
+						overlap = false;
+						for (unsigned l = 0; l < count; l++) {
+							overlap = calculateOverlap(Molecules[count], Molecules[l]);
+							if (overlap) break;
+						}
+					}
+					count++;
+
+				}
+				if (count >= Molecules.size()) {
+					for (unsigned l = 0; l < Molecules.size(); l++) {
+						for (unsigned m = l + 1; m < Molecules.size(); m++) {
+							overlap = calculateOverlap(Molecules[l], Molecules[m]);
+							if (overlap) {
+								std::cout << "arranging molecules in an fcc lattice created an overlap between the following molecules: " << l << " , " << m << std::endl;
+								return false;
+							}
+						}
+					}
+					std::cout << "placed all molecules." << std::endl;
+					return true;
+				}
+			}
+		}
+	}
+	if (count < Molecules.size() ) {
+		std::cout << "only " << count << " molecules were placed!" << std::endl;
+		return false;
+	}
+	return true;
 }
 
 void System::updateVerletLists() {
@@ -745,10 +805,10 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
 		for (auto& mono : mol.Monomers) {
 			char type {mono.Functional ? 'O' : 'C'};
 		    if (velocs) {
-		        fprintf(pdb, "ATOM %6d  %c   GLY    %2d     %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f \n", mono_count+1, type, mol_count, mono.Position(0), mono.Position(1), mono.Position(2), mono.Velocity(0), mono.Velocity(1), mono.Velocity(2));
+		        fprintf(pdb, "ATOM %6d  %c   GLY   %3d     %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f \n", mono_count+1, type, mol_count, mono.Position(0), mono.Position(1), mono.Position(2), mono.Velocity(0), mono.Velocity(1), mono.Velocity(2));
 		    }
 			else {
-			    fprintf(pdb, "ATOM %6d  %c   GLY    %2d     %7.3f %7.3f %7.3f \n", mono_count+1, type, mol_count, mono.Position(0), mono.Position(1), mono.Position(2));
+			    fprintf(pdb, "ATOM %6d  %c   GLY   %3d     %7.3f %7.3f %7.3f \n", mono_count+1, type, mol_count, mono.Position(0), mono.Position(1), mono.Position(2));
 		    }
 		    mono_count++; 
 		}	

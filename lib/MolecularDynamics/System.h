@@ -62,6 +62,7 @@ public:
     void setMoleculeCOM(unsigned, Vector3d); 
     void centerMolecule(unsigned); 
     bool arrangeMolecules();
+    bool arrangeMoleculesFCC();
 
     
     void propagate(double dt, bool calcEpot=false); 
