@@ -182,10 +182,14 @@ void System::initializeVelocitiesRandom(double Temperature) {
                     mono.Velocity(i) = Rand::real_uniform() - 0.5;
                 }
             }
-            mol.removeAngularMomentum();
+            if (mol.NumberOfMonomers > 1) {
+            	mol.removeAngularMomentum();
+            }
         }
         for (auto& mol : Molecules) {
-            COMVel = mol.centerOfMassVelocity();
+            if (mol.NumberOfMonomers > 1) {
+            	COMVel = mol.centerOfMassVelocity();
+            }
             for (auto& mono : mol.Monomers) {
                 mono.Velocity -= COMVel;
                 EKin += mono.Mass*mono.Velocity.squaredNorm();
