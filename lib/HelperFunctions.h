@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <../Eigen/Eigen/Dense>
+#include "Particle.h"
 
 using namespace Eigen;
 
@@ -117,3 +118,30 @@ bool fillConfigPoolVector(std::vector<std::string>& vec, std::ifstream& inputfil
 	while(inputfile >> configfile) vec.push_back(configfile);
 	return true;
 }
+
+bool initializeReactivePositions(std::vector<Particle>& vec, std::string filename) {
+    std::ifstream file {filename};
+    if (!file.is_open()) return false;
+    std::string dump, Type;
+    double x, y, z;
+    unsigned count {0};
+    if (file.is_open()) {
+        file >> dump >> dump;
+
+        while (file >> dump >> dump >> Type >> dump >> dump >> x >> y >> z >> dump >> dump >> dump) {
+			if (Type == "O") {
+				vec[count].Position(0) = x;
+				vec[count].Position(1) = y;
+				vec[count].Position(2) = z;
+				count++;
+			}
+		}
+        if (count != vec.size()) {
+        	std::cout << "only " << count << " monomers were initialized" << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+

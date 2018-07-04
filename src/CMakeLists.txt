@@ -16,3 +16,6 @@ target_link_libraries(Widom Random System)
 
 add_executable(Widom_parallel Widom_parallel.cpp)
 target_link_libraries(Widom_parallel Random Molecule)
+
+add_executable(Radial_dist radial_distribution.cpp)
+target_link_libraries(Radial_dist Particle)
