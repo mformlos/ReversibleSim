@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	unsigned total_count {0};
 
 	if (argc != 9) {
-	            std::cout << "usage: ./msd DIRECTORY MONOMERS REACTIVEFRACTION STARTSTEP ENDSTEP SAMPLINGSTEP INTERVAL ENDR" << std::endl;
+	            std::cout << "usage: ./radial_dist DIRECTORY MONOMERS REACTIVEFRACTION STARTSTEP ENDSTEP SAMPLINGSTEP INTERVAL ENDR" << std::endl;
 	            return EXIT_FAILURE;
 	}
 
