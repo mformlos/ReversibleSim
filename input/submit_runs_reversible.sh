@@ -15,7 +15,9 @@ CPUsPerTask=1
 CPUsPerNode=64
 TasksPerNode=$[$CPUsPerNode/$CPUsPerTask]
 echo "will submit $TasksPerNode per node"  
-nodes=("17")
+#nodes=("17")
+#nodes=("8" "9" "13" "15")
+nodes=("3")
 
 mkdir -p slurm
 currentNodeIndex=0
@@ -29,7 +31,7 @@ while read rundir; do
     echo $jobname
     echo $currentNode
     sedjobname="$(echo $jobname | sed 's/\./\\\./g')"
-    sed "s/JOBNAME/$sedjobname/" slurm_template.slurm > slurm/$jobname.slurm
+    sed "s/JOBNAME/$sedjobname/" slurm_template_reactivesolo.slurm > slurm/$jobname.slurm
     sed -i "s/NODES/1/" slurm/$jobname.slurm
     sed -i "s/NTASKS/1/" slurm/$jobname.slurm  
     sed -i "s/NCPUS/$CPUsPerTask/" slurm/$jobname.slurm  
@@ -46,6 +48,6 @@ while read rundir; do
     sbatch slurm/$jobname.slurm 
     echo $rundir >>submitted_runs.dat
     sleep 10
-done <runs_to_submit.dat
+done <runs_to_submit.dat 
 
 

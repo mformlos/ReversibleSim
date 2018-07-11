@@ -9,7 +9,7 @@ from collections import namedtuple
 
 
 random.seed()
-RunsPerParameter = 16
+RunsPerParameter = 8
 Parameter = namedtuple("Parameters", "Temperature, Gamma, BondPotential, FunctionalFraction, Density, Molecules, MDStep, SimTime, EquilTime")
 
 BondPotential = namedtuple("BondPotential", ["ConstantK", "ConstantR0", "Rg"])
@@ -19,9 +19,9 @@ ParameterSets = []
 
 #ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(33.7, 1.477, 9.35)], 0.1, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 10, 0.005, 5000000.0, 10000.))
 
-ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(24.6, 1.38, 10.7)], 0.3, [0.1, 0.2], 10, 0.005, 5000000.0, 10000.))
+ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(29.6, 1.448, 10.386)], 0.1, [0.2, 0.5, 0.7, 1.0], 10, 0.005, 5000000.0, 10000.))
 
-ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(33.7, 1.477, 9.35)], 0.1, [0.1, 0.2], 10, 0.005, 5000000.0, 10000.))
+ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(33.7, 1.477, 8.547)], 0.3, [0.2, 0.5, 0.7, 1.0], 10, 0.005, 5000000.0, 10000.))
 
 #ParameterSets.append(Parameter(1.0, 0.05, [BondPotential(24.6, 1.38, 10.7)], 0.3, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 10, 0.005, 5000000.0, 10000.))
 
@@ -47,14 +47,12 @@ for paramSet in ParameterSets:
         runparentdir=clusterpath+"runs-f-"+str(FunctionalFraction)+"-rho-"+str(Density)+"/"
         if not os.path.exists(runparentdir):
             os.makedirs(runparentdir)
-        else: 
-            printf("directory "+runparentdir+"already exists, exiting")
-            sys.exit()
         for Potential in paramSet.BondPotential: 
             ConstantK = Potential.ConstantK
             ConstantR0 = Potential.ConstantR0
             Rg = Potential.Rg
             rundir=runparentdir+"K-"+str(ConstantK)+"-R0-"+str(ConstantR0)+"/"
+            
             if not os.path.exists(rundir):
                 os.makedirs(rundir)
             Lx = int(round(2.*Rg*np.power((float(Molecules)/Density), 1./3.)))  

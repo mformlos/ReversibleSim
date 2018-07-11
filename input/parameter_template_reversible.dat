@@ -20,6 +20,7 @@ OutputStepFile = steps
 MoleculeFile = chain
 FunctionalFile = functional
 ConfigFile = config
+VelocFile = RANDOM
 StatisticsFile = stats
 ConfigOutFile = configs/config
 

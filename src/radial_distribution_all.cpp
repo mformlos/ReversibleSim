@@ -18,9 +18,9 @@
 
 int main(int argc, char* argv[]) {
 	std::string Directory{}, ConfigFile{}, ConfigFileStart{};
-	double FractionReactive{}, StartR{0.0}, EndR{5.0}, DR{0.1};
+	double FractionReactive{}, StartR{0.0}, DR{0.1};
 	int StartStep{}, EndStep{}, Step{}, SamplingStep{}, N{};
-	unsigned NumberOfMonomers {}, NumberReactive{};
+	unsigned NumberOfMonomers {}, NumberReactive{}, Replicas{};
 	std::vector<Particle> ReactiveMonomers {};
 
 	std::map<double, double> radial_dist {};
@@ -29,25 +29,23 @@ int main(int argc, char* argv[]) {
 
 	unsigned total_count {0};
 
-	if (argc != 9) {
-	            std::cout << "usage: ./msd DIRECTORY MONOMERS REACTIVEFRACTION STARTSTEP ENDSTEP SAMPLINGSTEP INTERVAL ENDR" << std::endl;
+	if (argc != 8) {
+	            std::cout << "usage: ./msd DIRECTORY MONOMERS REACTIVEFRACTION REPLICAS STARTSTEP SAMPLINGSTEP Interval " << std::endl;
 	            return EXIT_FAILURE;
 	}
 
 	Directory=argv[1];
 	NumberOfMonomers=std::stoi(argv[2]);
 	FractionReactive = std::stod(argv[3]);
-	StartStep = std::stoi(argv[4]);
-	EndStep = std::stoi(argv[5]);
+	Replicas = std::stoi(argv[4]); 
+	StartStep = std::stoi(argv[5]);
 	SamplingStep = std::stoi(argv[6]);
 	DR = std::stod(argv[7]);
-	EndR  = std::stod(argv[8]); 
 
 	std::cout << "Directory: " << Directory << std::endl;
-	std::cout << "StartStep: " << StartStep << "   EndStep: " << EndStep << "   SamplingStep: " << SamplingStep << std::endl;
-	std::cout << "StartR: " << StartR << " EndR: " << EndR << " DR: " << DR << std::endl;    
+	std::cout << "StartStep: " << StartStep << "   SamplingStep: " << SamplingStep << std::endl;
+	std::cout << "StartR: " << StartR << " DR: " << DR << std::endl;    
 
-	N = ((EndStep-StartStep)/SamplingStep);
 
 	NumberReactive = NumberOfMonomers*FractionReactive;
 
@@ -55,9 +53,8 @@ int main(int argc, char* argv[]) {
 	{
 		ReactiveMonomers.push_back(Particle(i));
 	}
-	
 
-	ConfigFileStart = Directory+"/configs/config";
+	//ConfigFileStart = Directory+"/configs/config";
 	std::string name;
 	name = Directory+"/radial_dist";
 	std::ifstream test(name);
@@ -68,29 +65,30 @@ int main(int argc, char* argv[]) {
 	std::ofstream output(name, std::ios::out | std::ios::trunc);
 	output.precision(8);
 
-	Step = StartStep;
+	
 	double distance {};
 	double bin {};
-	while (true) {
-		ConfigFile = ConfigFileStart+std::to_string(Step)+".pdb";
-		std::cout << ConfigFile << std::endl; 
-		if (!initializeReactivePositions(ReactiveMonomers, ConfigFile)) {
-		    std::cout << "problem with initializing monomers" << std::endl;
-		    break; 
-		}
-		for (unsigned i = 0; i < NumberReactive; i++) {
-			for (unsigned j = i + 1; j < NumberReactive; j++) {
-				distance = (ReactiveMonomers[i].Position-ReactiveMonomers[j].Position).norm();
-				if (distance <= EndR) {
+	for (unsigned repl = 0; repl < Replicas; repl++) {
+	    Step = StartStep;
+	    ConfigFileStart = Directory+"/REPL-"+std::to_string(repl)+"/configs/config"; 
+	    while (true) {
+		    ConfigFile = ConfigFileStart+std::to_string(Step)+".pdb";
+		    std::cout << ConfigFile << std::endl; 
+		    if (!initializeReactivePositions(ReactiveMonomers, ConfigFile)) {
+		        std::cout << "problem with initializing monomers" << std::endl;
+		        break; 
+		    }
+		    for (unsigned i = 0; i < NumberReactive; i++) {
+			    for (unsigned j = i + 1; j < NumberReactive; j++) {
+				    distance = (ReactiveMonomers[i].Position-ReactiveMonomers[j].Position).norm();
 				    bin = unsigned(distance/DR)*DR;
 				    //std::cout << "d: " << distance << " bin: " << bin << std::endl;  
 				    radial_dist_count[bin]++;
-				    
-				}
-			}
-		}
-		total_count++;
-		Step += SamplingStep;
+			    }
+		    }
+		    total_count++;
+		    Step += SamplingStep;
+	    }
 	}
 	double normalization {1./(2.*M_PI*DR*(NumberReactive-1)*total_count)};
 	for (auto& r : radial_dist_count) {
