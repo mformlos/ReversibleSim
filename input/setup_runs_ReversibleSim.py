@@ -16,9 +16,9 @@ Box = namedtuple("Box", ["Lx", "Ly", "Lz"])
 
 ParameterSets = []
 
-ParameterSets.append(Parameter(Box(200, 200, 200), 1.0, 0.05, [BondPotential(24.6, 1.38), BondPotential(29.6, 1.448), BondPotential(33.7, 1.477)], 0.1, 0.005, 5000000.0, 10000.))
+ParameterSets.append(Parameter(Box(200, 200, 200), 1.0, 0.05, [ BondPotential(29.6, 1.448), BondPotential(33.7, 1.477)], 0.3, 0.005, 5000000.0, 10000.))
 
-ParameterSets.append(Parameter(Box(200, 200, 200), 1.0, 0.05, [BondPotential(24.6, 1.38)], 0.3, 0.005, 5000000.0, 10000.))
+#ParameterSets.append(Parameter(Box(200, 200, 200), 1.0, 0.05, [BondPotential(24.6, 1.38)], 0.3, 0.005, 5000000.0, 10000.))
 
 homepath="/home/formanek/REVERSIBLE/"
 clusterpath="/scratch-new/formanek/REVERSIBLE/"
@@ -42,9 +42,6 @@ for paramSet in ParameterSets:
     runparentdir = clusterpath+"runs-f-"+str(FunctionalFraction)+"-rho-0.0/"
     if not os.path.exists(runparentdir):
         os.makedirs(runparentdir)
-    else: 
-        printf("directory "+runparentdir+"already exists, exiting")
-        sys.exit()
     for Potential in paramSet.BondPotential: 
         ConstantK = Potential.ConstantK
         ConstantR0 = Potential.ConstantR0

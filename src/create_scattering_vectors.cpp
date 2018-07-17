@@ -11,6 +11,7 @@
 #include <fstream>
 #include <string>
 #include <math.h>
+#include "HelperFunctions.h"
 
 struct three_dim {
     int x; 
@@ -23,31 +24,41 @@ struct three_dim {
 };
 
 int main(int argc, char* argv[]) {
-	double deltaK {}, Kmax{}, tolerance{}, Kabs{};
+	double deltaK {}, Kmax{}, tolerance{}, tolerance_change {};
+	std::string KabsFile{}, OutputDir{}; 
+	std::vector<double> KabsVec {}; 
+	unsigned MaxVecs {}; 
 
-	if (argc != 4) {
-		std::cout << "usage: ./create_scattering_vectors DELTAK KMAX TOLERANCE" << std::endl;
+	if (argc != 6) {
+		std::cout << "usage: ./create_scattering_vectors KABSFILE TOLERANCE TOLERANCECHANGE MAXVECS OUTPUTDIR" << std::endl;
 		return EXIT_FAILURE;
 	}
 
-	deltaK = std::stod(argv[1]);
-	Kmax = std::stod(argv[2]);
-	tolerance = std::stod(argv[3]);
+    KabsFile = argv[1];
+	tolerance = std::stod(argv[2]);
+	tolerance_change = std::stod(argv[3]); 
+	MaxVecs = std::stoi(argv[4]);
+	OutputDir = argv[5]; 
+	
 
-    std::cout << "DeltaK: " << deltaK << ", Kmax: " << Kmax << ", tolerance: " << tolerance << std::endl; 
+    std::cout << "KabsFile: " << KabsFile << ", OutputDir: " << OutputDir << ", tolerance: " << tolerance << " , Maxvecs: " << MaxVecs << std::endl; 
 
+    if (!initializeDoubleVector(KabsVec, KabsFile)){
+        std::cout << "KabsFile doesn't exist, exiting!" << std::endl; 
+        return EXIT_FAILURE; 
+    }
     std::vector<three_dim> VecK{};
     
     
 
-	Kabs = 1.0;
 	int nx{}, ny{}, nz{}, count{}, filecount {0};
 	double norm {};
     int mod_x {}, mod_y {}, mod_z {}; 
-    std::string OutputName {}, OutputNameStart {"/home/formanek/REVERSIBLE/input/structure_factor/VecK"};
-    std::ofstream Kcount ("/home/formanek/REVERSIBLE/input/structure_factor/Kcount", std::ios::out | std::ios::trunc); 
+    std::string OutputName {}, OutputNameStart {OutputDir+"VecK"};
+    std::ofstream Kcount (OutputDir+"Kcount", std::ios::out | std::ios::trunc); 
+    std::ofstream KVecFileList (OutputDir+"KVecFileList", std::ios::out | std::ios::trunc); 
     	
-	while (Kabs <= Kmax) {
+	for (auto& Kabs : KabsVec) {
 		count = 0;
 		VecK.clear(); 
 		mod_x = 0; 
@@ -77,11 +88,13 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-		if (count > 0) {
-		    std::cout << Kabs << " " << count << std::endl;
+		std::cout << Kabs << " " << count << std::endl;
+		
+		if (count > 0) { 
 		    Kcount << Kabs << " " << count << std::endl; 
 		    OutputName = OutputNameStart+std::to_string(filecount); 
 		    std::ofstream KFile(OutputName, std::ios::out | std::ios::trunc); 
+		    KVecFileList << OutputName << std::endl; 
 		    KFile << Kabs << std::endl;
 		    //KFile.precision(6); 
 		    for (auto& K : VecK) {
@@ -93,9 +106,11 @@ int main(int argc, char* argv[]) {
 		        KFile << K.z << std::endl;
 		    }
 		}
+		if (count >= MaxVecs) {
+		    tolerance *= tolerance_change; 
+		    std::cout << "new tolerance: " << tolerance << std::endl; 
+		}
 		filecount++; 
-		
-		Kabs += deltaK;
 	}
 
 }

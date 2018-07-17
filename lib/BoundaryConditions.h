@@ -3,6 +3,7 @@
 
 #include <array>
 
+
 inline void wrap(Particle& part, const std::array<unsigned, 3>& BoxSize, const double& Shear, const double& delrx) {
     double cy {floor(part.Position(1)/BoxSize[1])}; 
     part.Position(0) -= cy*delrx; 
@@ -10,6 +11,12 @@ inline void wrap(Particle& part, const std::array<unsigned, 3>& BoxSize, const d
     part.Position(1) -= BoxSize[1]*cy; 
     part.Position(2) -= BoxSize[2]*floor(part.Position(2)/BoxSize[2]); 
     part.Velocity(0) -= cy*Shear*BoxSize[1]; 
+}
+
+inline void wrapUniformNoShear(Particle& part, unsigned BoxSize) {
+    part.Position(0) -= BoxSize*floor(part.Position(0)/BoxSize); 
+    part.Position(1) -= BoxSize*floor(part.Position(1)/BoxSize); 
+    part.Position(2) -= BoxSize*floor(part.Position(2)/BoxSize); 
 }
 
 inline void wrapVelocityBack(Particle& part, Particle& image, const std::array<unsigned, 3>& BoxSize, const double& Shear, const double& delrx) {

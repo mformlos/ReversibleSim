@@ -41,6 +41,20 @@ bool initializeStepVector(std::vector<unsigned long long>& vec, std::string file
     return true; 
 } 
 
+bool initializeDoubleVector(std::vector<double>& vec, std::string filename) {
+	vec.clear();
+    std::ifstream file (filename, std::ios::in);
+    if (!file.is_open()) {
+        return false; 
+    }
+    double value{}; 
+    while(file >> value) {
+        vec.push_back(value); 
+    } 
+    return true; 
+} 
+
+
 struct ForceUpdate {
     unsigned long long Step; 
     Vector3d Force; 
@@ -143,5 +157,34 @@ bool initializeReactivePositions(std::vector<Particle>& vec, std::string filenam
     }
     return true;
 }
+
+bool initializePositions(std::vector<Particle>& vec, std::string filename) {
+    std::ifstream file {filename};
+    std::string line{};  
+    if (!file.is_open()) return false;
+    std::string dump, Type;
+    double x, y, z;
+    unsigned count {0};
+    if (file.is_open()) {
+        file >> dump >> dump;
+        while(getline(file, line)) {
+            std::istringstream iss(line); 
+            if (iss >> dump >> dump >> Type >> dump >> dump >> x >> y >> z >> dump >> dump >> dump)        
+            { 
+			    vec[count].Position(0) = x;
+			    vec[count].Position(1) = y;
+			    vec[count].Position(2) = z;
+			    count++;
+			}
+		}
+        if (count != vec.size()) {
+        	std::cout << "only " << count << " monomers were initialized" << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+
 
 
