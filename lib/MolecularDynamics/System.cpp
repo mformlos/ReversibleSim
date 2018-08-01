@@ -143,6 +143,42 @@ bool System::initializePositions(std::string filename) {
         if (file >> x >> y >> z) std::cout << "...but there is more data..." << std::endl;
         return true;
     }
+    
+bool System::initializePositionsPDB(std::string filename) {
+    std::ifstream file {filename};
+    if (!file.is_open()) return false;
+    std::string dump, line{}; 
+    double x, y, z;
+    unsigned count {0};
+    unsigned mol{0}, mono{0}; 
+    if (file.is_open()) {
+        while(getline(file, line)) {
+            std::istringstream iss(line); 
+            if (iss >> dump >> dump >> dump >> dump >> dump >> x >> y >> z >> dump >> dump >> dump)        
+            { 
+			    Molecules[mol].Monomers[mono].Position(0) = x;
+			    Molecules[mol].Monomers[mono].Position(1) = y;
+			    Molecules[mol].Monomers[mono].Position(2) = z;
+			    mono++; 
+			    if (mono >= Molecules[mol].NumberOfMonomers) {
+			        mono = 0; 
+			        mol++;    
+			    }
+			    count++;
+			}
+        }
+    }    
+       
+    if (count != NumberOfParticles()) {
+       	std::cout << "only " << count << " monomers were initialized" << std::endl;
+        return false;
+    }
+    std::cout << "all " << count << " monomer positions were initialized" << std::endl;
+    file.close();
+    return true;
+}
+
+    
 
 bool System::initializeVelocities(std::string filename) {
         std::ifstream file {filename};

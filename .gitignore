@@ -1,0 +1,10 @@
+build/
+bin/
+input/
+lib/Eigen/
+*~
+*SCNP*
+*slurm*
+*dat
+*pdb
+sqrt1-

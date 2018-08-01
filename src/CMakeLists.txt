@@ -27,6 +27,9 @@ target_link_libraries(Radial_dist_all Particle)
 add_executable(Structure_factor structure_factor.cpp)
 target_link_libraries(Structure_factor Molecule)
 
+add_executable(Form_factor form_factor.cpp)
+target_link_libraries(Form_factor System)
+
 add_executable(Create_scattering_vectors create_scattering_vectors.cpp)
 
-
+add_executable(cluster_calc cluster_calc.cpp)

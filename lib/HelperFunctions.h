@@ -182,6 +182,7 @@ bool initializePositions(std::vector<Particle>& vec, std::string filename) {
             return false;
         }
     }
+    file.close(); 
     return true;
 }
 

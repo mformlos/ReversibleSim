@@ -52,6 +52,14 @@ inline Vector3d relative(const Particle& one, const Particle& two, const std::ar
     return dist;
 } 
 
+inline Vector3d relativeUniformNoShear(const Particle& one, const Particle& two, unsigned BoxSize) {
+    Vector3d dist {two.Position - one.Position}; 
+    dist(0) -= BoxSize*round(dist(0)/BoxSize); 
+    dist(1) -= BoxSize*round(dist(1)/BoxSize); 
+    dist(2) -= BoxSize*round(dist(2)/BoxSize); 
+    return dist; 
+}
+
 inline Vector3d relative(const Vector3d& one, const Vector3d& two, const std::array<unsigned, 3>& BoxSize, const double& delrx) {
     Vector3d dist {two - one}; 
     double cy {round(dist(1)/BoxSize[1])}; 
