@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
         }
         unsigned cluster_count {0};
         for (auto& Cluster : Clusters) {
-            if (Cluster.size() > 1) {
+            if (Cluster.size() > 0) {
                 std::sort(Cluster.begin(), Cluster.end()); 
                 output << cluster_count << " " << Cluster.size() ; 
                 for (auto& Chain : Cluster) output << " " <<  Chain;

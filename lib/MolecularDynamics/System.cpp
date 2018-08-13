@@ -64,16 +64,8 @@ bool System::addMolecules(std::string filename, double mass) {
         }
         std::cout << "initialized " << Molecules.size() << " molecules with a total of " << mono_start << " monomers." << std::endl;
 
-
-        /*for (auto& mol : Molecules) {
-            for (auto& mono : mol.Monomers) {
-                std::cout << mono.Identifier << " ";
-            }
-            std::cout << std::endl;
-        }*/
-
         return true;
-    }
+}
 
 
 bool System::addLinks(std::string filename) {

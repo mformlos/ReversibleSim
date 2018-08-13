@@ -33,3 +33,5 @@ target_link_libraries(Form_factor System)
 add_executable(Create_scattering_vectors create_scattering_vectors.cpp)
 
 add_executable(cluster_calc cluster_calc.cpp)
+
+add_executable(cluster_corr cluster_corr.cpp)
