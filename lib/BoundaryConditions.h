@@ -86,4 +86,11 @@ inline void wrapCOM(Molecule& mol, const std::array<unsigned, 3>& BoxSize, const
     }
 }
 
+inline void wrapBack(const Particle& last, Particle& current, unsigned BoxSize) {
+    Vector3d dist {current.Position - last.Position}; 
+    current.Position(0) -= BoxSize*round(dist(0)/BoxSize); 
+    current.Position(1) -= BoxSize*round(dist(1)/BoxSize); 
+    current.Position(2) -= BoxSize*round(dist(2)/BoxSize); 
+}
+
 #endif

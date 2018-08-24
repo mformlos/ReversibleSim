@@ -28,6 +28,8 @@ Type extractParameter(std::string key, std::ifstream& inputfile, bool& found) {
     return param; 
 }
 
+
+
 bool initializeStepVector(std::vector<unsigned long long>& vec, std::string filename) {
 	vec.clear();
     std::ifstream file (filename, std::ios::in);
@@ -186,6 +188,19 @@ bool initializePositions(std::vector<Particle>& vec, std::string filename) {
     return true;
 }
 
+bool initializeKVectors(std::vector<Vector3d>& KVecs, double& Kabs,  std::string filename) {
+    std::ifstream file {filename};
+    KVecs.clear();
+    if (!file.is_open()) {
+        return false; 
+    }
+    file >> Kabs; 
+    double x {}, y{}, z{}; 
+    while(file >> x >> y >> z) {
+        KVecs.push_back(Vector3d(x,y,z)); 
+    }
+    return true; 
+}
 
 
 

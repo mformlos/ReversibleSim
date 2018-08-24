@@ -35,3 +35,27 @@ add_executable(Create_scattering_vectors create_scattering_vectors.cpp)
 add_executable(cluster_calc cluster_calc.cpp)
 
 add_executable(cluster_corr cluster_corr.cpp)
+
+add_executable(msd msd.cpp)
+target_link_libraries(msd Particle)
+
+add_executable(msd_stepfile msd_stepfile.cpp)
+target_link_libraries(msd_stepfile Particle)
+
+add_executable(Van_Hove Van_Hove.cpp)
+target_link_libraries(Van_Hove Molecule)
+
+add_executable(Van_Hove_Self Van_Hove_self.cpp)
+target_link_libraries(Van_Hove_Self Molecule)
+
+add_executable(Van_Hove_Self_All Van_Hove_self_all.cpp)
+target_link_libraries(Van_Hove_Self_All Molecule)
+
+add_executable(Van_Hove_Distinct Van_Hove_distinct.cpp)
+target_link_libraries(Van_Hove_Distinct Molecule)
+add_executable(Coherent_Scattering coherent_scattering.cpp)
+target_link_libraries(Coherent_Scattering Molecule)
+
+add_executable(Coherent_Scattering_Stepfile coherent_scattering_stepfile.cpp)
+target_link_libraries(Coherent_Scattering_Stepfile Molecule)
+
