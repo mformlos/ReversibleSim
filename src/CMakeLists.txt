@@ -36,6 +36,8 @@ add_executable(cluster_calc cluster_calc.cpp)
 
 add_executable(cluster_corr cluster_corr.cpp)
 
+add_executable(Cluster_Time cluster_time.cpp)
+
 add_executable(msd msd.cpp)
 target_link_libraries(msd Particle)
 

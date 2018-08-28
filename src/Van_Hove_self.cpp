@@ -86,6 +86,11 @@ int main(int argc, char* argv[]) {
 	        std::cout << "problem with initializing monomers" << std::endl;
 	        break; 
 	    }
+	    Vector3d COMPosZero {Vector3d::Zero()}; 
+		for (auto& mono : Monomers_zero) {
+		    COMPosZero += mono.Position; 
+		}
+		COMPosZero /= Monomers; 
 	    Monomers_tlast = Monomers_zero; 
         for (auto& Step : SampleSteps) {
             ConfigFile = ConfigFileStart+std::to_string(T0Step+Step)+".pdb";
@@ -97,7 +102,11 @@ int main(int argc, char* argv[]) {
 	        for (unsigned mono = 0; mono < Monomers; mono++) {
 		        wrapBack(Monomers_tlast[mono], Monomers_t[mono], BoxSize); 
 		    }
-	        
+	        Vector3d COMPosT {Vector3d::Zero()}; 
+		    for (auto& mono : Monomers_t) {
+		        COMPosT += mono.Position; 
+		    }
+		    COMPosT /= Monomers; 
             for (unsigned i = 0; i < Monomers; i++) { 
                 relPos = Monomers_t[i].Position-Monomers_zero[i].Position; 
                 distance = relPos.norm(); 

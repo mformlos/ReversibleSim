@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> KVecFileList {}; 
     
     std::map<double, std::map<double, double>> coherent_scattering_function {}; // for each q, there is a map<t, F(q,t)>
-    std::map<double, int> coherent_count {}; // for each dt, there is a count map<t, count(t, q)>  
+    
     std::vector<unsigned long long> StepVector{}; 
     std::vector<unsigned long long>::iterator StepVectorIterator{}; 
     
@@ -63,72 +63,97 @@ int main(int argc, char* argv[]) {
         printf("Error creating directory!");
         return EXIT_FAILURE;
     }
+    
+    double Kabs {}, sum {0.0}, constant {2.*M_PI/BoxSize}; 
+    std::vector<std::vector<Vector3d>> QKVecs {}; // for each q, there is a list of KVectors 
+	std::vector<double> QKabs {}; // for each q, there is a Kabs; 
+	for (auto& KVecFileName : KVecFileList) {
+	    QKVecs.push_back(std::vector<Vector3d>()); 
+        initializeKVectors(QKVecs.back(),Kabs, KVecFileName); 
+        Kabs *= constant;
+        QKabs.push_back(Kabs); 
+        //std::cout << KVecFileName << " " << Kabs<< " " << QKVecs.back().size() << std::endl; 
+	
+	}
+    
+	std::vector<std::vector<double>> cos_zero(QKVecs.size(), std::vector<double>()); 
+	std::vector<std::vector<double>> sin_zero(QKVecs.size(), std::vector<double>()); 
+	
+	for (unsigned i = 0; i < QKVecs.size(); i++) {
+	    cos_zero[i] = std::vector<double>(QKVecs[i].size(), 0.0);
+	    sin_zero[i] = std::vector<double>(QKVecs[i].size(), 0.0); 
+	}
 	
 	CoherentFileNameStart=CoherentDir+"/Fqt_q";
 	
-	double Kabs {}, sum {0.0}, constant {2.*M_PI/BoxSize}; 
     timeval start {}, end {};
     gettimeofday(&start, NULL); 
     
-    for (auto& KVecFileName : KVecFileList) {
-        std::vector<Vector3d> KVecs; 
-        initializeKVectors(KVecs, Kabs, KVecFileName);
-        Kabs *= constant; 
-        std::cout << KVecFileName << " " << Kabs<< " " << KVecs.size() << std::endl; 
-        Step = StartStep;
-        ConfigFileStart = Directory+"/configs/config"; 
-        
-        T0Step = StartStep;     
-        ConfigFile = ConfigFileStart+std::to_string(T0Step)+".pdb";    
-        //std::cout << "T0Step: " << T0Step << std::endl; 
-        if (!initializePositions(Monomers_zero, ConfigFile)) {
+   
+       
+    Step = StartStep;
+    ConfigFileStart = Directory+"/configs/config"; 
+    
+    T0Step = StartStep;     
+    ConfigFile = ConfigFileStart+std::to_string(T0Step)+".pdb";    
+    //std::cout << "T0Step: " << T0Step << std::endl; 
+    if (!initializePositions(Monomers_zero, ConfigFile)) {
+        std::cout << "problem with initializing monomers" << std::endl;
+        return EXIT_FAILURE; 
+    }
+    for (auto& mono : Monomers_zero) {
+        wrapUniformNoShear(mono, BoxSize);
+    }
+    for (unsigned i = 0; i < QKVecs.size(); i++) {
+        std::fill(cos_zero[i].begin(), cos_zero[i].end(), 0.0); 
+        std::fill(sin_zero[i].begin(), sin_zero[i].end(), 0.0); 
+        for (unsigned j = 0; j < QKVecs[i].size(); j++) {
+            for (auto& mono: Monomers_zero) {
+                cos_zero[i][j]+= cos(QKVecs[i][j].dot(mono.Position)*constant); 
+                sin_zero[i][j]+= sin(QKVecs[i][j].dot(mono.Position)*constant); 
+            }
+        }
+    }
+
+    StepVectorIterator = StepVector.begin(); 	        
+    while (StepVectorIterator != StepVector.end()) {
+        Step = *StepVectorIterator;
+        Time = Step*DeltaT; 
+        T1Step = T0Step + Step; 
+        std::cout << "T1Step: " << T1Step << std::endl; 
+        ConfigFile = ConfigFileStart+std::to_string(T1Step)+".pdb";
+        if (!initializePositions(Monomers_t, ConfigFile)) {
             std::cout << "problem with initializing monomers" << std::endl;
             break; 
         }
-        for (auto& mono : Monomers_zero) {
+        for (auto& mono : Monomers_t) {
             wrapUniformNoShear(mono, BoxSize);
         }
-        std::vector<double> cos_zero(KVecs.size(),0.0); 
-        std::vector<double> sin_zero(KVecs.size(), 0.0);
-        for (unsigned i = 0; i < KVecs.size(); i++) {
-            for (auto& mono: Monomers_zero) {
-                cos_zero[i]+= cos(KVecs[i].dot(mono.Position))*constant; 
-                sin_zero[i]+= sin(KVecs[i].dot(mono.Position))*constant; 
-            }
-        }
-        StepVectorIterator = StepVector.begin(); 	        
-        while (StepVectorIterator != StepVector.end()) {
-            Step = *StepVectorIterator;
-            Time = Step*DeltaT; 
-            T1Step = T0Step + Step; 
-            //std::cout << "T1Step: " << T1Step << std::endl; 
-            ConfigFile = ConfigFileStart+std::to_string(T1Step)+".pdb";
-            if (!initializePositions(Monomers_t, ConfigFile)) {
-                std::cout << "problem with initializing monomers" << std::endl;
-                break; 
-            }
-            for (auto& mono : Monomers_t) {
-                wrapUniformNoShear(mono, BoxSize);
-            }
+        
+        for (unsigned i = 0; i < QKVecs.size(); i++) {
             sum = 0.0; 
-            for (unsigned i = 0; i < KVecs.size(); i++) {
-                double cos_t{0.0}, sin_t{0.0}; 
+            std::vector<double> cos_t(QKVecs[i].size(), 0.0); 
+            std::vector<double> sin_t(QKVecs[i].size(), 0.0);
+            for (unsigned j = 0; j < QKVecs[i].size(); j++) {
+            
                 for (auto& mono: Monomers_t) {
-                    cos_t+= cos(KVecs[i].dot(mono.Position))*constant; 
-                    sin_t+= sin(KVecs[i].dot(mono.Position))*constant; 
+                    cos_t[j]+= cos(QKVecs[i][j].dot(mono.Position)*constant); 
+                    sin_t[j]+= sin(QKVecs[i][j].dot(mono.Position)*constant); 
                 }
-                sum += cos_zero[i]*cos_t+sin_zero[i]*sin_t; 
+                sum += cos_zero[i][j]*cos_t[j]+sin_zero[i][j]*sin_t[j]; 
             }
-            coherent_scattering_function[Kabs][Time] += sum/KVecs.size(); 
-            coherent_count[Time]++; 
-            StepVectorIterator++; 
-        } 
-        CoherentFileName = CoherentFileNameStart+std::to_string(Kabs); 
+            
+            coherent_scattering_function[QKabs[i]][Time] += sum/QKVecs[i].size(); 
+        }
+        StepVectorIterator++; 
+   } 
+   for (unsigned i = 0; i < QKVecs.size(); i++) {
+        CoherentFileName = CoherentFileNameStart+std::to_string(QKabs[i]); 
         std::ofstream OutputFile (CoherentFileName, std::ios::out | std::ios::trunc);
-        for (auto& corr :  coherent_scattering_function[Kabs]) {
-            OutputFile << corr.first << " " << corr.second / coherent_count[corr.first] << std::endl; 
-    }
-    OutputFile.close();
+        for (auto& corr :  coherent_scattering_function[QKabs[i]]) {
+            OutputFile << corr.first << " " << corr.second  << std::endl; 
+        }
+        OutputFile.close();
     }
     gettimeofday(&end, NULL); 
     double realTime { ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6 };

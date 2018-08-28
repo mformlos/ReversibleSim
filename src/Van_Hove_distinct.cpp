@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     
     
     if (argc != 9) {
-            std::cout << "usage: ./Van_Hove DIRECTORY STEPFILE STARTSTEP SAMPLINGSTEP DELTAT Monomers BOXSIZE INTERVAL" << std::endl;  
+            std::cout << "usage: ./Van_Hove_Distinct DIRECTORY STEPFILE STARTSTEP SAMPLINGSTEP DELTAT MONOMERS BOXSIZE INTERVAL" << std::endl;  
             return EXIT_FAILURE; 
     }
     
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 	    }
         for (auto& Step : SampleSteps) {
             ConfigFile = ConfigFileStart+std::to_string(T0Step+Step)+".pdb";
-	        std::cout << "ConfigFile T1: " << ConfigFile << std::endl; 
+	        //std::cout << "ConfigFile T1: " << ConfigFile << std::endl; 
 	        if (!initializePositions(Monomers_t, ConfigFile)) {
 	            std::cout << "problem with initializing monomers" << std::endl;
 	            break; 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
                         relPos = relative(Monomers_zero[i], Monomers_t[j], Box, 0.0);
                         distance = relPos.norm(); 
                         if (distance <= (double)BoxSize*0.5) {
-                            bin = unsigned(round(distance/DR)*DR); 
+                            bin = round(distance/DR)*DR; 
                             VanHoveDistinct[Step][bin]++; 
                             VanHoveDistinct_count[Step]++;
                         }

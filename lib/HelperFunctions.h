@@ -40,6 +40,7 @@ bool initializeStepVector(std::vector<unsigned long long>& vec, std::string file
     while(file >> Step) {
         vec.push_back(Step); 
     } 
+    file.close(); 
     return true; 
 } 
 
@@ -53,6 +54,7 @@ bool initializeDoubleVector(std::vector<double>& vec, std::string filename) {
     while(file >> value) {
         vec.push_back(value); 
     } 
+    file.close();
     return true; 
 } 
 
@@ -85,6 +87,7 @@ bool initializeForceUpdateVector(std::vector<ForceUpdate>& vec, std::string file
         Vector3d Force(fx, fy, fz); 
         vec.push_back(ForceUpdate(Step, Force)); 
     } 
+    file.close();
     return true; 
 } 
 
@@ -99,6 +102,7 @@ bool initializeConstraintUpdateVector(std::vector<ConstraintUpdate>& vec, std::s
     while(file >> Step >> c) {
         vec.push_back(ConstraintUpdate(Step, c)); 
     } 
+    file.close();
     return true; 
 } 
 
@@ -117,6 +121,7 @@ bool fillConfigPool(std::vector<std::string>& vec, std::string filename) {
 	if (!file.is_open()) return false;
 	std::string configfile {};
 	while(file >> configfile) vec.push_back(configfile);
+	file.close(); 
 	return true;
 }
 
@@ -157,6 +162,7 @@ bool initializeReactivePositions(std::vector<Particle>& vec, std::string filenam
             return false;
         }
     }
+    file.close();
     return true;
 }
 
@@ -199,6 +205,7 @@ bool initializeKVectors(std::vector<Vector3d>& KVecs, double& Kabs,  std::string
     while(file >> x >> y >> z) {
         KVecs.push_back(Vector3d(x,y,z)); 
     }
+    file.close(); 
     return true; 
 }
 
