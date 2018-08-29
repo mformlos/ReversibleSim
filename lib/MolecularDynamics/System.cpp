@@ -831,7 +831,7 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
     int mol_count{0}; 
     fprintf(pdb, "MODEL     %d \n", step);
     for (auto& mol : Molecules) {
-    	wrapCOM(mol, BoxSize, 0.0, 0.0);
+    	//wrapCOM(mol, BoxSize, 0.0, 0.0);
 		mol_count++;
 		int mono_count{0}; 
 		for (auto& mono : mol.Monomers) {

@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
                     cos_t[j]+= cos(QKVecs[i][j].dot(mono.Position)*constant); 
                     sin_t[j]+= sin(QKVecs[i][j].dot(mono.Position)*constant); 
                 }
-                sum += cos_zero[i][j]*cos_t[j]+sin_zero[i][j]*sin_t[j]; 
+                sum += cos_zero[i][j]*cos_t[j]+sin_zero[i][j]*sin_t[j]/NumberOfMonomers; 
             }
             
             coherent_scattering_function[QKabs[i]][Time] += sum/QKVecs[i].size(); 
