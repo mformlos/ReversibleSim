@@ -30,6 +30,12 @@ target_link_libraries(Structure_factor Molecule)
 add_executable(Form_factor form_factor.cpp)
 target_link_libraries(Form_factor System)
 
+add_executable(Incoherent_Scattering  incoherent_scattering.cpp)
+target_link_libraries(Incoherent_Scattering System)
+
+add_executable(Incoherent_Scattering_Stepfile  incoherent_scattering_stepfile.cpp)
+target_link_libraries(Incoherent_Scattering_Stepfile System)
+
 add_executable(Create_scattering_vectors create_scattering_vectors.cpp)
 
 add_executable(cluster_calc cluster_calc.cpp)

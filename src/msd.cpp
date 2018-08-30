@@ -17,7 +17,7 @@
 
 
 int main(int argc, char* argv[]) {
-    std::string Directory{}, ConfigFile{}, ConfigFileStart{}, OutputFileNameStart{}, OutputFileName{}; 
+    std::string Directory{}, ConfigFile{}, ConfigFileStart{}, OutputFileNameStart{}, OutputFileName{},OutputQFileNameStart{}, OutputQFileName{}; 
     double DeltaTSim{}, DeltaMSDTime {}, CurrentDt{}; 
     unsigned StartStep{}, SamplingStep{}, CurrentSamplingStep{}, CurrentDtStep{}, DeltaMSDStep{}, NumberOfMonomers{}, BoxLength {};   
     
@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "StartStep: " << StartStep << "   SamplingStep: " << SamplingStep << std::endl;
     
     OutputFileNameStart = Directory+"/MSD/MSD";
+    OutputQFileNameStart = Directory+"/MQD/MQD";
     ConfigFileStart = Directory+"/configs/config";
     
     for (unsigned i = 0; i < NumberOfMonomers; i++) {
@@ -61,13 +62,21 @@ int main(int argc, char* argv[]) {
     while (true) {
         std::map<double,double> MSD; 
         std::map<double,double>::iterator MSD_iter; 
+        std::map<double,double> MQD;
         CurrentDtStep = 0; 
         std::cout << "Current Step 0: " << CurrentSamplingStep << std::endl; 
         CurrentDt = 0.0;    
         OutputFileName = OutputFileNameStart + std::to_string(CurrentSamplingStep); 
+        OutputQFileName = OutputQFileNameStart + std::to_string(CurrentSamplingStep);
         std::ofstream OutputFile (OutputFileName, std::ios::out | std::ios::trunc);
+        std::ofstream OutputQFile (OutputQFileName, std::ios::out | std::ios::trunc);
         if (!OutputFile.is_open()) {
             std::cout << "Cannot open output file, directory 'MSD' might not exist. Exiting..." << std::endl; 
+            return EXIT_FAILURE; 
+        }
+        
+        if (!OutputQFile.is_open()) {
+            std::cout << "Cannot open output file, directory 'MQD' might not exist. Exiting..." << std::endl; 
             return EXIT_FAILURE; 
         }
          
@@ -100,11 +109,17 @@ int main(int argc, char* argv[]) {
 		    }
 		    COMPosT /= NumberOfMonomers; 
 		    
-		    double msd_current {0.0}; 
+		    double msd_current {0.0}, mqd_current {0.0}, square{0.0};
+		    Vector3d dist {Vector3d::Zero()};  
 		    for (unsigned j = 0; j < NumberOfMonomers; j++) {
-		        msd_current += (Monomers_zero[j].Position - COMPosZero - Monomers_t[j].Position + COMPosT).squaredNorm(); 
+		        dist = Monomers_zero[j].Position - COMPosZero - Monomers_t[j].Position + COMPosT; 
+		        square = dist.squaredNorm();
+		        msd_current += square;
+		        square *= square; 
+		        mqd_current += square;  
 		    }
-		    MSD[CurrentDt] = msd_current/NumberOfMonomers;		    
+		    MSD[CurrentDt] = msd_current/NumberOfMonomers;	
+		    MQD[CurrentDt] = mqd_current/NumberOfMonomers;		    
 		    CurrentDtStep += DeltaMSDStep;
             CurrentDt +=  DeltaMSDTime;
             Monomers_tlast = Monomers_t; 
@@ -113,6 +128,12 @@ int main(int argc, char* argv[]) {
             OutputFile << m.first << " " << m.second << std::endl; 
         }          
         OutputFile.close(); 
+        
+        for (auto& m : MQD) {
+            OutputQFile << m.first << " " << m.second << std::endl; 
+            //OutputQFile << m.first << " " << (3./5.)*(m.second/pow(MSD[m.first],2)) -1. << std::endl; 
+        }          
+        OutputQFile.close(); 
         CurrentSamplingStep += SamplingStep; 
     }
     

@@ -17,9 +17,9 @@
 
 
 int main(int argc, char* argv[]) {
-    std::string Directory{}, ConfigFile{}, ConfigFileStart{}, OutputFileNameStart{}, OutputFileName{}, StepFile{}; 
+    std::string Directory{}, ConfigFile{}, ConfigFileStart{}, OutputFileNameStart{}, OutputFileName{}, StepFile{}, OutputQFileNameStart{}, OutputQFileName{}; 
     double DeltaTSim{}, CurrentDt{}; 
-    unsigned StartStep{}, CurrentDtStep{}, NumberOfMonomers{}, BoxLength {}, MaxStep{}, FileStep{};   
+    unsigned StartStep{}, CurrentDtStep{}, NumberOfMonomers{}, BoxLength {}, FileStep{};   
     
     std::vector<Particle> Monomers_zero{}; 
     std::vector<Particle> Monomers_t{}; 
@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
     
     
     OutputFileNameStart = Directory+"/MSD/MSD";
+    OutputQFileNameStart = Directory+"/MQD/MQD";
     ConfigFileStart = Directory+"/configs/config";
     
     for (unsigned i = 0; i < NumberOfMonomers; i++) {
@@ -64,14 +65,22 @@ int main(int argc, char* argv[]) {
     gettimeofday(&start, NULL); 
     
     std::map<double,double> MSD; 
-    std::map<double,double>::iterator MSD_iter; 
+    std::map<double,double>::iterator MSD_iter;
+    std::map<double,double> MQD; 
     
     std::cout << "Current Step 0: " << StartStep << std::endl;  
     StepVectorIterator = StepVector.begin(); 
     OutputFileName = OutputFileNameStart + std::to_string(StartStep); 
+    OutputQFileName = OutputQFileNameStart + std::to_string(StartStep);
     std::ofstream OutputFile (OutputFileName, std::ios::out | std::ios::trunc);
+    std::ofstream OutputQFile (OutputQFileName, std::ios::out | std::ios::trunc);
     if (!OutputFile.is_open()) {
         std::cout << "Cannot open output file, directory 'MSD' might not exist. Exiting..." << std::endl; 
+        return EXIT_FAILURE; 
+    }
+    
+    if (!OutputQFile.is_open()) {
+        std::cout << "Cannot open output file, directory 'MQD' might not exist. Exiting..." << std::endl; 
         return EXIT_FAILURE; 
     }
      
@@ -108,11 +117,18 @@ int main(int argc, char* argv[]) {
 	    }
 	    COMPosT /= NumberOfMonomers; 
 	    
-	    double msd_current {0.0}; 
+	    double msd_current {0.0}, mqd_current {0.0}, square{0.0}; 
+	    Vector3d dist {Vector3d::Zero()};  
 	    for (unsigned j = 0; j < NumberOfMonomers; j++) {
-	        msd_current += (Monomers_zero[j].Position - COMPosZero - Monomers_t[j].Position + COMPosT).squaredNorm(); 
+	        dist = Monomers_zero[j].Position - COMPosZero - Monomers_t[j].Position + COMPosT; 
+	        square = dist.squaredNorm();
+            msd_current += square;
+            square *= square; 
+            mqd_current += square;  
+	        //msd_current += (Monomers_zero[j].Position - COMPosZero - Monomers_t[j].Position + COMPosT).squaredNorm(); 
 	    }
 	    MSD[CurrentDt] = msd_current/NumberOfMonomers;		    
+	    MQD[CurrentDt] = mqd_current/NumberOfMonomers;	
 	    StepVectorIterator++; 
         Monomers_tlast = Monomers_t; 
 	}
@@ -120,7 +136,12 @@ int main(int argc, char* argv[]) {
         OutputFile << m.first << " " << m.second << std::endl; 
     }          
     OutputFile.close(); 
-
+    
+    for (auto& m : MQD) {
+        OutputQFile << m.first << " " << m.second << std::endl; 
+        //OutputQFile << m.first << " " << (3./5.)*(m.second/pow(MSD[m.first],2)) -1. << std::endl; 
+    }          
+    OutputQFile.close(); 
     
     gettimeofday(&end, NULL); 
     double realTime { ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6 };
