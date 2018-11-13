@@ -4,7 +4,7 @@
 #include <array>
 
 
-inline void wrap(Particle& part, const std::array<unsigned, 3>& BoxSize, const double& Shear, const double& delrx) {
+inline void wrap(Particle& part, const std::array<double, 3>& BoxSize, const double& Shear, const double& delrx) {
     double cy {floor(part.Position(1)/BoxSize[1])}; 
     part.Position(0) -= cy*delrx; 
     part.Position(0) -= BoxSize[0]*floor(part.Position(0)/BoxSize[0]); 
@@ -13,13 +13,13 @@ inline void wrap(Particle& part, const std::array<unsigned, 3>& BoxSize, const d
     part.Velocity(0) -= cy*Shear*BoxSize[1]; 
 }
 
-inline void wrapUniformNoShear(Particle& part, unsigned BoxSize) {
+inline void wrapUniformNoShear(Particle& part, double BoxSize) {
     part.Position(0) -= BoxSize*floor(part.Position(0)/BoxSize); 
     part.Position(1) -= BoxSize*floor(part.Position(1)/BoxSize); 
     part.Position(2) -= BoxSize*floor(part.Position(2)/BoxSize); 
 }
 
-inline void wrapVelocityBack(Particle& part, Particle& image, const std::array<unsigned, 3>& BoxSize, const double& Shear, const double& delrx) {
+inline void wrapVelocityBack(Particle& part, Particle& image, const std::array<double, 3>& BoxSize, const double& Shear, const double& delrx) {
     double cy {floor(part.Position(1)/BoxSize[1])};
     //if (cy != 0.0) std::cout << "vel before: " << part.Velocity.transpose() << " ";
     part.Velocity = image.Velocity;  
@@ -28,7 +28,7 @@ inline void wrapVelocityBack(Particle& part, Particle& image, const std::array<u
 }
 
 
-inline Vector3d image(const Particle& part, const std::array<unsigned, 3>& BoxSize, const double& delrx) {
+inline Vector3d image(const Particle& part, const std::array<double, 3>& BoxSize, const double& delrx) {
     double cy {floor(part.Position(1)/BoxSize[1])}; 
     Vector3d pos {Vector3d::Zero()}; 
     pos(0) = part.Position(0) - cy*delrx; 
@@ -42,7 +42,7 @@ inline Vector3d image(const Particle& part, const std::array<unsigned, 3>& BoxSi
 
 
 
-inline Vector3d relative(const Particle& one, const Particle& two, const std::array<unsigned, 3>& BoxSize, const double& delrx) {
+inline Vector3d relative(const Particle& one, const Particle& two, const std::array<double, 3>& BoxSize, const double& delrx) {
     Vector3d dist {two.Position - one.Position}; 
     double cy {round(dist(1)/BoxSize[1])}; 
     dist(0) -= cy*delrx; 
@@ -52,7 +52,7 @@ inline Vector3d relative(const Particle& one, const Particle& two, const std::ar
     return dist;
 } 
 
-inline Vector3d relativeUniformNoShear(const Particle& one, const Particle& two, unsigned BoxSize) {
+inline Vector3d relativeUniformNoShear(const Particle& one, const Particle& two, double BoxSize) {
     Vector3d dist {two.Position - one.Position}; 
     dist(0) -= BoxSize*round(dist(0)/BoxSize); 
     dist(1) -= BoxSize*round(dist(1)/BoxSize); 
@@ -60,7 +60,7 @@ inline Vector3d relativeUniformNoShear(const Particle& one, const Particle& two,
     return dist; 
 }
 
-inline Vector3d relative(const Vector3d& one, const Vector3d& two, const std::array<unsigned, 3>& BoxSize, const double& delrx) {
+inline Vector3d relative(const Vector3d& one, const Vector3d& two, const std::array<double, 3>& BoxSize, const double& delrx) {
     Vector3d dist {two - one}; 
     double cy {round(dist(1)/BoxSize[1])}; 
     dist(0) -= cy*delrx; 
@@ -70,7 +70,7 @@ inline Vector3d relative(const Vector3d& one, const Vector3d& two, const std::ar
     return dist;
 } 
 
-inline void wrapCOM(Molecule& mol, const std::array<unsigned, 3>& BoxSize, const double& Shear, const double& delrx) {
+inline void wrapCOM(Molecule& mol, const std::array<double, 3>& BoxSize, const double& Shear, const double& delrx) {
     Vector3d COMPos {mol.centerOfMassPosition()}; 
     Vector3d Translate {Vector3d::Zero()}; 
     double cy {floor(COMPos(1)/BoxSize[1])};
@@ -86,7 +86,7 @@ inline void wrapCOM(Molecule& mol, const std::array<unsigned, 3>& BoxSize, const
     }
 }
 
-inline void wrapBack(const Particle& last, Particle& current, unsigned BoxSize) {
+inline void wrapBack(const Particle& last, Particle& current, double BoxSize) {
     Vector3d dist {current.Position - last.Position}; 
     current.Position(0) -= BoxSize*round(dist(0)/BoxSize); 
     current.Position(1) -= BoxSize*round(dist(1)/BoxSize); 

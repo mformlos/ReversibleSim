@@ -11,6 +11,9 @@ target_link_libraries(LangevinTest Random Molecule Particle System)
 add_executable(ReversibleSim_auto ReversibleSim_auto.cpp)
 target_link_libraries(ReversibleSim_auto Random Molecule Particle System)
 
+add_executable(Equilibrate_Box equilibrate_box.cpp)
+target_link_libraries(Equilibrate_Box Random Molecule Particle System)
+
 add_executable(Widom Widom.cpp)
 target_link_libraries(Widom Random System)
 

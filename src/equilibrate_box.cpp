@@ -1,3 +1,7 @@
+/* Simulation to equilibrate system towards a given box size by 
+scaling it by "Scaling" every "ScalingStep" steps. No functional groups are included. 
+*/
+
 #include <sys/time.h>
 #include <stdlib.h>
 #include <iostream>
@@ -18,20 +22,19 @@ void signalHandler(int signum)
 }
 
 int main(int argc, char* argv[]) {
+
     SignalCaught = 0;
     signal(SIGINT, signalHandler);
     unsigned Seed {}; 
-    double Lx{}, Ly{}, Lz{};  
-    unsigned long long TotalSteps{}, n {}, m {}; 
-    double MDStep{}, SimTime{}, EquilTime{}, Temperature{}, Time{}, Density {}, Gamma {}, ConstantK {}, ConstantR0 {};
-    bool ParameterInitialized{}, Equilibrated{false}, Arranged {};
-    std::string OutputStepFile{}, MoleculeFile{}, FunctionalFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{}, ArrangeMolecules{};
-    std::vector<unsigned long long> OutputSteps {};
-    std::vector<unsigned long long>::iterator OutputStepsIt{};
+    double Lx{}, Ly{}, Lz{}, StartLx {}, StartLy {}, StartLz {};  
+    unsigned long long n {}, ScalingStep {}, SamplingStep {}; 
+    double MDStep{}, Temperature{}, Time{0.0}, Density {}, Gamma {}, ConstantK {}, ConstantR0 {}, Scaling {0.995};
+    bool ParameterInitialized{}, BoxSizeReached{false}, Arranged {};
+    std::string MoleculeFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{}, ArrangeMolecules{"no"};
     
     
     if (argc != 2) {
-        std::cout << "usage: ./ReversibleSim.cpp PARAMETER-INPUT-FILE " << std::endl;
+        std::cout << "usage: ./Equilibrate_Box PARAMETER-INPUT-FILE " << std::endl;
         return EXIT_FAILURE; 
     }
     
@@ -51,6 +54,12 @@ int main(int argc, char* argv[]) {
     if (!ParameterInitialized) return EXIT_FAILURE;
     Lz = extractParameter<double>("BoxZ", inputfile, ParameterInitialized); 
     if (!ParameterInitialized) return EXIT_FAILURE;
+    StartLx = extractParameter<double>("StartBoxX", inputfile, ParameterInitialized); 
+    if (!ParameterInitialized) return EXIT_FAILURE;
+    StartLy = extractParameter<double>("StartBoxY", inputfile, ParameterInitialized); 
+    if (!ParameterInitialized) return EXIT_FAILURE;
+    StartLz = extractParameter<double>("StartBoxZ", inputfile, ParameterInitialized); 
+    if (!ParameterInitialized) return EXIT_FAILURE;   
     Temperature = extractParameter<double>("Temperature", inputfile, ParameterInitialized);
     if (!ParameterInitialized) return EXIT_FAILURE; 
     Gamma = extractParameter<double>("Gamma", inputfile, ParameterInitialized);
@@ -61,20 +70,14 @@ int main(int argc, char* argv[]) {
 	if (!ParameterInitialized) return EXIT_FAILURE;
     MDStep = extractParameter<double>("MDStep", inputfile, ParameterInitialized); 
     if (!ParameterInitialized) return EXIT_FAILURE;
-    Time = extractParameter<double>("StartTime", inputfile, ParameterInitialized); 
+    ScalingStep = extractParameter<double>("ScalingStep", inputfile, ParameterInitialized); 
     if (!ParameterInitialized) return EXIT_FAILURE;
-    SimTime = extractParameter<double>("SimTime", inputfile, ParameterInitialized);
-    if (!ParameterInitialized) return EXIT_FAILURE;
-    EquilTime = extractParameter<double>("EquilTime", inputfile, ParameterInitialized);
+    SamplingStep = extractParameter<double>("SamplingStep", inputfile, ParameterInitialized); 
     if (!ParameterInitialized) return EXIT_FAILURE;
     Seed = extractParameter<double>("Seed", inputfile, ParameterInitialized);
     if (!ParameterInitialized) return EXIT_FAILURE;
-    OutputStepFile = extractParameter<std::string>("OutputStepFile", inputfile, ParameterInitialized);
-    if (!ParameterInitialized) return EXIT_FAILURE;
     MoleculeFile = extractParameter<std::string>("MoleculeFile", inputfile, ParameterInitialized);      
     if (!ParameterInitialized) return EXIT_FAILURE;
-    FunctionalFile = extractParameter<std::string>("FunctionalFile", inputfile, ParameterInitialized);
-    if (!ParameterInitialized) return EXIT_FAILURE; 
     ConfigFile = extractParameter<std::string>("ConfigFile", inputfile, ParameterInitialized);
     if (!ParameterInitialized) return EXIT_FAILURE;
     VelocFile = extractParameter<std::string>("VelocFile", inputfile, ParameterInitialized);
@@ -87,53 +90,45 @@ int main(int argc, char* argv[]) {
     if (!ParameterInitialized) return EXIT_FAILURE;
     
     inputfile.close(); 
-    
-    TotalSteps = (unsigned long long) (SimTime/MDStep); 
-    std::cout << "Total number of MD steps: " << TotalSteps << std::endl;  
-    
+
     ///////////////////////////////////////// 
      
     /////// PARAMETER CONTROL OUTPUT //////// 
     std::cout << "Lx is " << Lx << std::endl;
     std::cout << "Ly is " << Ly << std::endl;
     std::cout << "Lz is " << Lz << std::endl;
+    std::cout << "StartLx is " << StartLx << std::endl;
+    std::cout << "StartLy is " << StartLy << std::endl;
+    std::cout << "StartLz is " << StartLz << std::endl;
     std::cout << "Temperature is " << Temperature << std::endl;
     std::cout << "Friction Coefficient is " << Gamma << std::endl;
     std::cout << "Constant K is " << ConstantK << std::endl;
     std::cout << "Constant R0 is " << ConstantR0 << std::endl;
     std::cout << "MDStep is " << MDStep << std::endl;
     std::cout << "RNG seed is " << Seed << std::endl; 
-    std::cout << "Starttime is " << Time << std::endl;
-    std::cout << "Totaltime is " << SimTime << std::endl;
-    std::cout << "Equiltime is " << EquilTime << std::endl;
-    std::cout << "OutputStepFile is " << OutputStepFile << std::endl;
     std::cout << "MoleculeFile is " << MoleculeFile << std::endl;
     std::cout << "VelocityFile is " << VelocFile << std::endl;
-    std::cout << "FunctionalFile is " << FunctionalFile << std::endl;
     std::cout << "ConfigFile is " << ConfigFile << std::endl;
-
+    std::cout << "Arrange molecules in FCC lattice? " << ArrangeMolecules << std::endl; 
+    
     ////// RANDOM ENGINE SEEDING & WARMUP //////
     Rand::seed(Seed);
     Rand::warmup(10000);
-
+    
     /////////////////////////////////////
     
     /////// SYSTEM INITIALIZATION ///////
-
-    System Sys(Lx, Ly, Lz, ConstantK, ConstantR0, true);
+    if (StartLx <= Lx || StartLy <= Ly || StartLz <= Lz) {
+        std::cout << "Starting box size must be bigger than finishing box size! " << std::cout; 
+        return EXIT_FAILURE; 
+    }
+    
+    System Sys(StartLx, StartLy, StartLz, ConstantK, ConstantR0, true);
     
     if (!Sys.addMolecules(MoleculeFile, 1.0)) {
         std::cout << "MoleculeFile does not exist!" << std::endl; 
         return EXIT_FAILURE;     
     }
-
-    Density = double(Sys.NumberOfParticles())/(Lx*Ly*Lz);
-    std::cout << "Number of chains: " << Sys.NumberOfMolecules() << ", Number of monomers: " << Sys.NumberOfParticles() << std::endl;
-    std::cout << "Number density of the system: " << Density << std::endl;
-    if (!Sys.addFunctional(FunctionalFile)) {
-        std::cout << "LinkFile does not exist!" << std::endl; 
-        return EXIT_FAILURE; 
-    } 
     
     if (!Sys.initializePositions(ConfigFile)) {
         std::cout << "ConfigFile does not exist or contains too little lines!" << std::endl; 
@@ -141,6 +136,7 @@ int main(int argc, char* argv[]) {
     } 
     
     if (VelocFile == "RANDOM") Sys.initializeVelocitiesRandom(Temperature);
+    
     else {
     	if (!Sys.initializeVelocities(VelocFile)) {
     		std::cout << "VelocFile does not exist or contains too little lines!" << std::endl;
@@ -148,7 +144,6 @@ int main(int argc, char* argv[]) {
     	}
     }
     
-    unsigned count {0};
     if (ArrangeMolecules == "yes") {
         Arranged = false; 
         while (!Arranged) {
@@ -161,113 +156,76 @@ int main(int argc, char* argv[]) {
 		        Arranged = false; 
 		        std::cout << "bad placement, trying again..." << std::endl; 
 		    }
-		    if (count >= 50) {
-		        std::cout << "not able to place molecules! Terminating program." << std::endl;
-			    return EXIT_FAILURE;
-		    }
 	    }
     }
-
+    
     std::ofstream StatisticsStream(StatisticsFile, std::ios::out | std::ios::app);
 	FILE* PDBout{};
-
-    /////////////////////////////////////
-	/// print PDB to check intitial placement
-	if (Time < EquilTime) {
-		PDBout = fopen("initial.pdb", "w");
-		Sys.printPDB(PDBout, 0, 1);
-		fclose(PDBout);
-		Sys.printStatistics(StatisticsStream, -EquilTime);
-	}
-	////////////////////////////////////
-
-
-	try {
-		Sys.breakBonds();
-		Sys.makeBonds();
-		Sys.updateVerletLists();
-		Sys.calculateForces(true);
-		//Sys.calculateForcesBrute();
-	}
-	catch (const LibraryException &ex) {
-		std::cout << ex.what() << std::endl;
-		std::cout << "bad initial configuration! Terminating program." << std::endl;
-		return EXIT_FAILURE;
-	}
-
-
     
-    /////////////////////////////////////
+    PDBout = fopen("initial.pdb", "w");
+    Sys.printPDB(PDBout, 0, 1);
+	fclose(PDBout);
+	Sys.printStatistics(StatisticsStream, Time);
     
-    /////// OUTPUT INITIALIZATION ///////
+    ////////////////////////////////////
+    ////// TIME MEASUREMENT START //////
     
-    if (!initializeStepVector(OutputSteps, OutputStepFile)) {
-        std::cout << "OutputStepFile does not exist!" << std::endl; 
-        return EXIT_FAILURE; 
-    }
-    std::cout << "Output will be done " << OutputSteps.size() << " times. " << std::endl; 
-    OutputStepsIt = OutputSteps.begin(); 
-
-
     timeval start {}, end {};
     gettimeofday(&start, NULL); 
     
     ///////////////////////////////////
     ////// MAIN SIMULATION LOOP ///////
-    if (Time < EquilTime) {
-    	m = TotalSteps;
-    	n = 0;
-    }
-    else {
-    	n = (unsigned long long) (Time/MDStep);
-    	m = n;
-    	Equilibrated = true;
-    }
-    std::cout << " Time: " << Time << ", m: " << m << ", n: " << n << ", next output at m = " << *OutputStepsIt << std::endl;
-    for (; n <= TotalSteps; n++, m++) {
-        Time += MDStep; 
-        try {
-            if (m == *OutputStepsIt) Sys.propagateLangevin(MDStep, Temperature, Gamma, true);
+    
+    n = 1; 
+    while (!BoxSizeReached) {
+        try {   
+            if (n % SamplingStep == 0) Sys.propagateLangevin(MDStep, Temperature, Gamma, true);
             else Sys.propagateLangevin(MDStep, Temperature, Gamma, false);
         }
         catch (const LibraryException &ex) {
-            PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");
+            PDBout = fopen((ConfigOutFile+std::to_string(n)+".pdb").c_str(), "w");
             Sys.printPDB(PDBout, n, 1);
             fclose(PDBout);    
             std::cout << "Terminating..." << std::endl;   
             std::terminate(); 
         }
-        if (!Equilibrated && Time >= EquilTime) {
-            std::cout << "System equilibrated, starting production run" << std::endl;
-            Equilibrated = true; 
-            m = 0;
-            Time = 0.0;
+        if (n % SamplingStep == 0) {
+            Sys.printStatistics(StatisticsStream, Time);  
+        }
+        if (n % ScalingStep == 0) {
+            PDBout = fopen((ConfigOutFile+"-L"+std::to_string(Sys.BoxSize[0])+".pdb").c_str(), "w");
+            Sys.printPDB(PDBout, n, 1);
+            fclose(PDBout);
+            Sys.scaleSystem(Scaling); 
+            
+            std::cout << "BoxSize currently: " << Sys.BoxSize[0] << " , " << Sys.BoxSize[1] << " , " << Sys.BoxSize[2] << std::endl; 
+            if (Sys.BoxSize[0] <= Lx) {
+                BoxSizeReached = true;
+                n = 0;  
+                Sys.wrapMoleculesCOM(); 
+                std::cout << "BoxSize reached" << std::endl; 
+            }    
         }
         
-        
-        
-        ////////// OUTPUT ////////////
         if (SignalCaught) {
             std::cout << "writing job data..." << std::endl; 
-            PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");
+            PDBout = fopen((ConfigOutFile+std::to_string(n)+".pdb").c_str(), "w");
             Sys.printPDB(PDBout, n, 1);
             fclose(PDBout);
             std::cout << "Terminating..." << std::endl;   
             std::terminate(); 
         }
         
-        if (m == *OutputStepsIt) {
-            Sys.printStatistics(StatisticsStream, Time);
-            PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");
-            Sys.printPDB(PDBout, n, 1); 
-            fclose(PDBout);
-        	std::ofstream Bonds ("Bonds/Bonds"+std::to_string(m),std::ios::out | std::ios::trunc);
-        	Sys.printBonds(Bonds);
-        	Bonds.close();
-            std::cout << Time <<  std::endl; 
-            OutputStepsIt++;        
-        }
-    }    
+        Time += MDStep; 
+        n++; 
+    }
+    
+    std::cout << "End of simulation. Writing job data..." << std::endl; 
+    Sys.printStatistics(StatisticsStream, Time);
+    PDBout = fopen((ConfigOutFile+std::to_string(n)+".pdb").c_str(), "w");
+    Sys.printPDB(PDBout, n, 1);
+    fclose(PDBout);
+    StatisticsStream.close(); 
     
     //////////////////////////////////////
     ////// MAIN SIMULATION LOOP END///////
@@ -276,10 +234,8 @@ int main(int argc, char* argv[]) {
     
     double realTime { ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6 };
     unsigned TotalMonomers {Sys.NumberOfParticles()};
-    std::cout << "total time: " << realTime << " , time per particle and step: " << realTime/TotalMonomers/TotalSteps << std::endl;
+    std::cout << "total time: " << realTime << " , time per particle and step: " << realTime/TotalMonomers/n << std::endl;
     
     return EXIT_SUCCESS;
-
+   
 }
-    
-

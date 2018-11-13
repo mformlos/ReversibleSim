@@ -15,7 +15,6 @@ int main() {
     if (!test) {
     	std::cout << "problem with adding molecules" << std::endl;
     }
-    int count {0};
     /*for (auto& mol : sys_test.Molecules) {
     	std::cout << "Molecule: " << count<< std::endl;
     	for (auto& part : mol.Monomers) {

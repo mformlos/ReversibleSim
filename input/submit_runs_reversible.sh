@@ -15,17 +15,14 @@ CPUsPerTask=1
 CPUsPerNode=64
 TasksPerNode=$[$CPUsPerNode/$CPUsPerTask]
 echo "will submit $TasksPerNode per node"  
-#nodes=("17")
-#nodes=("8" "9" "13" "15")
-nodes=("3")
+nodes=("17")
+#nodes=("15" "16" "17")
 
 mkdir -p slurm
 currentNodeIndex=0
 currentNode=${nodes[$currentNodeIndex]}
 runcount=0
 while read rundir; do 
-
-    echo $BoxSize
     echo $rundir
     jobname="$(echo $rundir | sed 's/\/scratch-new\/formanek\/REVERSIBLE\/runs-//')"
     echo $jobname
@@ -33,7 +30,7 @@ while read rundir; do
     echo $jobname
     echo $currentNode
     sedjobname="$(echo $jobname | sed 's/\./\\\./g')"
-    sed "s/JOBNAME/$sedjobname/" slurm_template.slurm > slurm/$jobname.slurm
+    sed "s/JOBNAME/$sedjobname/" slurm_template_big.slurm > slurm/$jobname.slurm
     sed -i "s/NODES/1/" slurm/$jobname.slurm
     sed -i "s/NTASKS/1/" slurm/$jobname.slurm  
     sed -i "s/NCPUS/$CPUsPerTask/" slurm/$jobname.slurm  

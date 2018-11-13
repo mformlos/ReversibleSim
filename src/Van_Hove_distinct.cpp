@@ -13,8 +13,8 @@
 
 int main(int argc, char* argv[]) {
     std::string Directory{}, ReplicaDir {}, ConfigFile{}, ConfigFileStart{}, StepSampleFile{}, SelfOutputDir{}, DistinctOutputDir {},  SelfOutputFileStart{}, DistinctOutputFileStart{}, SelfOutputFileName {}, DistinctOutputFileName {};
-    double DR{0.1};
-    unsigned StartStep{}, SamplingStep{}, Monomers{}, BoxSize{}, T0Step {}, T1Step{};    
+    double DR{0.1}, BoxSize{};
+    unsigned StartStep{}, SamplingStep{}, Monomers{}, T0Step {}, T1Step{};    
     double DeltaT{}, bin{}; 
     
     std::vector<unsigned long long> SampleSteps {}; 
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     SamplingStep = std::stoi(argv[4]); 
 	DeltaT = std::stod(argv[5]); 
 	Monomers = std::stoi(argv[6]); 
-	BoxSize = std::stoi(argv[7]); 
+	BoxSize = std::stod(argv[7]); 
 	DR = std::stod(argv[8]); 
 	
 	std::cout << "Directory: " << Directory << std::endl;
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 	
     Vector3d relPos {}; 
     double distance {}; 
-    std::array<unsigned,3> Box {}; 
+    std::array<double,3> Box {}; 
     Box[0] = Box[1] = Box[2] = BoxSize; 
     
     timeval start {}, end {};

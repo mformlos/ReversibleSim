@@ -21,7 +21,7 @@ public:
     double Radius0; //equilibrium radius for the reversible bond potential
     bool PBC;
     
-    std::array<unsigned,3> BoxSize; 
+    std::array<double,3> BoxSize; 
     std::array<unsigned,3> Cells; 
     std::array<double,3> CellSideLength; 
     
@@ -33,8 +33,8 @@ public:
     
     
     
-    System(unsigned, unsigned, unsigned, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true); //initialize only boxsize;
-    System(double, double, double, unsigned, unsigned, unsigned, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true); //initialize with cutoffs and capture distance
+    System(double, double, double, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true); //initialize only boxsize;
+    System(double, double, double, double, double, double, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true); //initialize with cutoffs and capture distance
     
     void updateVerletLists(); 
     void checkVerletLists(); 
@@ -68,6 +68,7 @@ public:
     
     void propagate(double dt, bool calcEpot=false); 
     void propagateLangevin(double dt, double Temperature, double gamma=0.05, bool calcEpot=false); 
+    void scaleSystem(double); 
     
     //getter:
     

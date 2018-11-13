@@ -16,6 +16,8 @@ EquilTime =
 
 Seed = 
 
+ArrangeMolecules = 
+
 OutputStepFile = steps
 MoleculeFile = chain
 FunctionalFile = functional

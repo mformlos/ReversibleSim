@@ -1,6 +1,6 @@
 #include "System.h"
 
-System::System(unsigned Lx, unsigned Ly, unsigned Lz, double aK, double aRadius0,  bool PBCon) :
+System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  bool PBCon) :
     Cutoff {1.5}, 
     VerletRadius {2.0}, 
     VerletRadiusSq {4.0},
@@ -22,7 +22,7 @@ System::System(unsigned Lx, unsigned Ly, unsigned Lz, double aK, double aRadius0
     }
     
 
-System::System(double aCutoff, double aVerletRadius, double aCapture, unsigned Lx, unsigned Ly, unsigned Lz, double aK, double aRadius0, bool PBCon) :
+System::System(double aCutoff, double aVerletRadius, double aCapture, double Lx, double Ly, double Lz, double aK, double aRadius0, bool PBCon) :
     Cutoff {aCutoff}, 
     VerletRadius {aVerletRadius}, 
     VerletRadiusSq {aVerletRadius*aVerletRadius},
@@ -748,6 +748,17 @@ void System::propagateLangevin(double dt, double Temperature, double gamma, bool
     }
 }*/
 
+
+void System::scaleSystem(double scaling) {   
+    for (auto& mol : Molecules) {
+        for (auto& part : mol.Monomers) {
+            part.Position *= scaling; 
+        }
+    }
+    BoxSize[0] *= scaling;    
+    BoxSize[1] *= scaling; 
+    BoxSize[2] *= scaling;
+}
 
 unsigned System::NumberOfParticles() {
     unsigned count {}; 
