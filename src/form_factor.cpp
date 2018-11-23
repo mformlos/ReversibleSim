@@ -29,16 +29,17 @@ int main(int argc, char* argv[]) {
     unsigned count {0}; 
     
     
-    if (argc != 7) {
-        std::cout << "usage: ./Form_factor RUNPARENTDIR REPLICAS PARAMETERFILE WQFILE STARTSTEP SAMPLINGSTEP" << std::endl;  
+    if (argc != 8) {
+        std::cout << "usage: ./Form_factor RUNPARENTDIR REPLICAS PARAMETERFILE MOLECULEFILE WQFILE STARTSTEP SAMPLINGSTEP" << std::endl;  
     }    
     
     Directory=argv[1];
 	Replicas = std::stoi(argv[2]);
 	ParameterFile = argv[3];
-	WQFile = argv[4];
-	StartStep = std::stoi(argv[5]);
-	SamplingStep = std::stoi(argv[6]);
+	MoleculeFile = argv[4];
+	WQFile = argv[5];
+	StartStep = std::stoi(argv[6]);
+	SamplingStep = std::stoi(argv[7]);
 	
 	std::ifstream inputfile(ParameterFile, std::ios::in);
     if (!inputfile.is_open()) {
@@ -58,10 +59,10 @@ int main(int argc, char* argv[]) {
     
     BoxSize = extractParameter<unsigned>("BoxX", inputfile, ParameterInitialized); 
     if (!ParameterInitialized) return EXIT_FAILURE;
-    MoleculeFile = extractParameter<std::string>("MoleculeFile", inputfile, ParameterInitialized);      
+    /*MoleculeFile = extractParameter<std::string>("MoleculeFile", inputfile, ParameterInitialized);      
     if (!ParameterInitialized) return EXIT_FAILURE;
     MoleculeFile = ParameterDir+MoleculeFile; 
-    
+    */
     std::cout << "MoleculeFile : " << MoleculeFile << std::endl; 
     
     inputfile.close(); 

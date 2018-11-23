@@ -141,13 +141,17 @@ bool System::initializePositionsPDB(std::string filename) {
     if (!file.is_open()) return false;
     std::string dump, line{}; 
     double x, y, z;
-    unsigned count {0};
+    unsigned count {0}, Npart {NumberOfParticles()}; 
     unsigned mol{0}, mono{0}; 
     if (file.is_open()) {
         while(getline(file, line)) {
             std::istringstream iss(line); 
             if (iss >> dump >> dump >> dump >> dump >> dump >> x >> y >> z >> dump >> dump >> dump)        
             { 
+			    if (count >= Npart) {
+			        std::cout << "all " << count << " monomer positions were initialized, but there is more data" << std::endl; 
+			        return true; 
+			    }
 			    Molecules[mol].Monomers[mono].Position(0) = x;
 			    Molecules[mol].Monomers[mono].Position(1) = y;
 			    Molecules[mol].Monomers[mono].Position(2) = z;
@@ -161,7 +165,7 @@ bool System::initializePositionsPDB(std::string filename) {
         }
     }    
        
-    if (count != NumberOfParticles()) {
+    if (count != Npart) {
        	std::cout << "only " << count << " monomers were initialized" << std::endl;
         return false;
     }
