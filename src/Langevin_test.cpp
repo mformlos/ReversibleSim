@@ -69,7 +69,7 @@ int main() {
     
     for (unsigned long long i = 0; i < TotalSteps; i++) {
         if (i == *OutputStepsIt) {
-            sys_test.propagateLangevin(0.001, 1., 0.05, true);
+            sys_test.propagateLangevin(true);
             //sys_test.propagate(0.001, true); 
             sys_test.printStatistics(gyr, i*0.001);
             sys_test.printPDB(pdb,i);
@@ -77,7 +77,7 @@ int main() {
             //sys_test.printBonds();
             OutputStepsIt++;
         }
-        else sys_test.propagateLangevin(0.01, 1., 0.05); //sys_test.propagate(0.001); //
+        else sys_test.propagateLangevin(); //sys_test.propagate(0.001); //
 
         
     }

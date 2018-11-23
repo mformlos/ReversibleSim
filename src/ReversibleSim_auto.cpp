@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     
     /////// SYSTEM INITIALIZATION ///////
 
-    System Sys(Lx, Ly, Lz, ConstantK, ConstantR0, true);
+    System Sys(1.23, 1.5, 1.3, Lx, Ly, Lz, ConstantK, ConstantR0, true, MDStep, Temperature, Gamma);
     
     if (!Sys.addMolecules(MoleculeFile, 1.0)) {
         std::cout << "MoleculeFile does not exist!" << std::endl; 
@@ -227,8 +227,8 @@ int main(int argc, char* argv[]) {
     for (; n <= TotalSteps; n++, m++) {
         Time += MDStep; 
         try {
-            if (m == *OutputStepsIt) Sys.propagateLangevin(MDStep, Temperature, Gamma, true);
-            else Sys.propagateLangevin(MDStep, Temperature, Gamma, false);
+            if (m == *OutputStepsIt) Sys.propagateLangevin(true);
+            else Sys.propagateLangevin(false);
         }
         catch (const LibraryException &ex) {
             PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");

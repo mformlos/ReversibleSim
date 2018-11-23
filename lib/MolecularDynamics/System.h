@@ -18,8 +18,26 @@ public:
     double VerletRadiusSq;
     double CaptureDistance;
     double K;  //constant for the reversible bond potential
+    double twoK; // 2*K
     double Radius0; //equilibrium radius for the reversible bond potential
+    double DeltaT; //TimeStep
+    double Temperature; 
+    double Gamma; //Constant for Langevin thermostat
+    
+    /// Langevin Constants
+    double velcexp;
+    double velcsqrt; 
+    double poscexp; 
+    double poscsqrt; 
+    double tau1; 
+    double tau2; 
+    double zc11;
+    double zc21; 
+    double zc22; 
+    /////
+    
     bool PBC;
+    
     
     std::array<double,3> BoxSize; 
     std::array<unsigned,3> Cells; 
@@ -33,8 +51,8 @@ public:
     
     
     
-    System(double, double, double, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true); //initialize only boxsize;
-    System(double, double, double, double, double, double, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true); //initialize with cutoffs and capture distance
+    System(double, double, double, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true, double DeltaT = 0.01, double Temperature = 1.0, double Gamma = 0.05); //initialize only boxsize;
+    System(double, double, double, double, double, double, double aK = 29.6, double aRadius0 = 1.448, bool PBCon = true, double DeltaT = 0.01, double Temperature = 1.0, double Gamma = 0.05); //initialize with cutoffs and capture distance
     
     void updateVerletLists(); 
     void checkVerletLists(); 
@@ -66,8 +84,8 @@ public:
     bool arrangeMoleculesFCC();
 
     
-    void propagate(double dt, bool calcEpot=false); 
-    void propagateLangevin(double dt, double Temperature, double gamma=0.05, bool calcEpot=false); 
+    void propagate(bool calcEpot=false); 
+    void propagateLangevin(bool calcEpot=false); 
     void scaleSystem(double); 
     
     //getter:

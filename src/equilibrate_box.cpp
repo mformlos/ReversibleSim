@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE; 
     }
     
-    System Sys(StartLx, StartLy, StartLz, ConstantK, ConstantR0, true);
+    System Sys(StartLx, StartLy, StartLz, ConstantK, ConstantR0, true, MDStep, Temperature, Gamma);
     
     if (!Sys.addMolecules(MoleculeFile, 1.0)) {
         std::cout << "MoleculeFile does not exist!" << std::endl; 
@@ -179,8 +179,8 @@ int main(int argc, char* argv[]) {
     n = 1; 
     while (!BoxSizeReached) {
         try {   
-            if (n % SamplingStep == 0) Sys.propagateLangevin(MDStep, Temperature, Gamma, true);
-            else Sys.propagateLangevin(MDStep, Temperature, Gamma, false);
+            if (n % SamplingStep == 0) Sys.propagateLangevin(true);
+            else Sys.propagateLangevin(false);
         }
         catch (const LibraryException &ex) {
             PDBout = fopen((ConfigOutFile+std::to_string(n)+".pdb").c_str(), "w");

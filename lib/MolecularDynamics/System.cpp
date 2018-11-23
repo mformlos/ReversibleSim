@@ -1,12 +1,16 @@
 #include "System.h"
 
-System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  bool PBCon) :
+System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  bool PBCon, double dt, double T, double g) :
     Cutoff {1.5}, 
     VerletRadius {2.0}, 
     VerletRadiusSq {4.0},
 	CaptureDistance {1.3},
 	K {aK},
+	twoK {aK*2.0},
 	Radius0 {aRadius0},
+    DeltaT{dt}, 
+    Temperature{T}, 
+    Gamma{g}, 
     PBC{PBCon},
 	ReversibleBonds {} {
         BoxSize[0] = Lx; 
@@ -19,16 +23,29 @@ System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  boo
         CellSideLength[1] = BoxSize[1]/(double)Cells[1];
         CellSideLength[2] = BoxSize[2]/(double)Cells[2];
         CellList = std::vector<std::vector<std::vector<std::forward_list<Particle*>>>>(Cells[0], std::vector<std::vector<std::forward_list<Particle*>>>(Cells[1], std::vector<std::forward_list<Particle*>>(Cells[2], std::forward_list<Particle*>())));
+        velcexp = exp(-Gamma*DeltaT); 
+        velcsqrt = sqrt(2.*Gamma*Temperature); 
+        poscexp = (1.-velcexp)/(Gamma); 
+        poscsqrt = velcsqrt/Gamma; 
+        tau1 = (1.-exp(-Gamma*DeltaT))/Gamma; 
+        tau2 = (1.-exp(-2.*Gamma*DeltaT))/(2.*Gamma); 
+        zc11 = sqrt(tau2);
+        zc21 = (tau1-tau2)/zc11; 
+        zc22 = sqrt(DeltaT - tau1*tau1/tau2); 
     }
     
 
-System::System(double aCutoff, double aVerletRadius, double aCapture, double Lx, double Ly, double Lz, double aK, double aRadius0, bool PBCon) :
+System::System(double aCutoff, double aVerletRadius, double aCapture, double Lx, double Ly, double Lz, double aK, double aRadius0, bool PBCon, double dt, double T, double g) :
     Cutoff {aCutoff}, 
     VerletRadius {aVerletRadius}, 
     VerletRadiusSq {aVerletRadius*aVerletRadius},
 	CaptureDistance {aCapture},
 	K {aK},
+	twoK {aK*2.0},
 	Radius0 {aRadius0},
+    DeltaT{dt}, 
+    Temperature{T}, 
+    Gamma{g},
     PBC {PBCon},
 	ReversibleBonds {}{
         BoxSize[0] = Lx; 
@@ -41,6 +58,15 @@ System::System(double aCutoff, double aVerletRadius, double aCapture, double Lx,
         CellSideLength[1] = BoxSize[1]/(double)Cells[1];
         CellSideLength[2] = BoxSize[2]/(double)Cells[2];
         CellList = std::vector<std::vector<std::vector<std::forward_list<Particle*>>>>(Cells[0], std::vector<std::vector<std::forward_list<Particle*>>>(Cells[1], std::vector<std::forward_list<Particle*>>(Cells[2], std::forward_list<Particle*>())));
+        velcexp = exp(-Gamma*DeltaT); 
+        velcsqrt = sqrt(2.*Gamma*Temperature); 
+        poscexp = (1.-velcexp)/(Gamma); 
+        poscsqrt = velcsqrt/Gamma; 
+        tau1 = (1.-exp(-Gamma*DeltaT))/Gamma; 
+        tau2 = (1.-exp(-2.*Gamma*DeltaT))/(2.*Gamma); 
+        zc11 = sqrt(tau2);
+        zc21 = (tau1-tau2)/zc11; 
+        zc22 = sqrt(DeltaT - tau1*tau1/tau2); 
     }
         
 bool System::addMolecules(std::string filename, double mass) {
@@ -509,7 +535,7 @@ void System::calculateForces(bool calcEpot) {
                 	if (calcEpot) {
                 		mol.Epot += 0.5*Reversible_Bond_Potential(radius, Radius0, K);
                 	}
-                	force_abs = Reversible_Bond_Force(radius, Radius0, K);
+                	force_abs = Reversible_Bond_Force(radius, Radius0, twoK);
                 	if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
 						throw(RLJException(mono.Identifier, mono.Position, mono.Velocity, other -> Identifier, other -> Position, other -> Velocity, force_abs));
 					}
@@ -663,11 +689,11 @@ void System::wrapMoleculesCOM() {
 }
 
 
-void System::propagate(double dt, bool calcEpot) {
+void System::propagate(bool calcEpot) {
     for (auto& mol : Molecules) {
         for (auto& mono : mol.Monomers) {
-            mono.Velocity += (mono.Force/mono.Mass)*dt*0.5; 
-            mono.Position += mono.Velocity*dt; 
+            mono.Velocity += (mono.Force/mono.Mass)*DeltaT*0.5; 
+            mono.Position += mono.Velocity*DeltaT; 
             //TODO: boundary 
         }
     }
@@ -679,32 +705,33 @@ void System::propagate(double dt, bool calcEpot) {
     
     for (auto& mol : Molecules) {
         for (auto& mono : mol.Monomers) {
-            mono.Velocity += (mono.Force/mono.Mass)*dt*0.5;  
+            mono.Velocity += (mono.Force/mono.Mass)*DeltaT*0.5;  
         }
     }
 }
 
-void System::propagateLangevin(double dt, double Temperature, double gamma, bool calcEpot) {
-    double velcexp {exp(-gamma*dt)}; 
-    double velcsqrt {sqrt(2.*gamma*Temperature)}; 
-    double poscexp {(1.-velcexp)/(gamma)}; 
-    double poscsqrt {velcsqrt/gamma}; 
-    double tau1 {(1.-exp(-gamma*dt))/gamma}; 
-    double tau2 {(1.-exp(-2.*gamma*dt))/(2.*gamma)}; 
-    double zc11 {sqrt(tau2)};
-    double zc21 {(tau1-tau2)/zc11}; 
-    double zc22 {sqrt(dt - tau1*tau1/tau2)}; 
+void System::propagateLangevin(bool calcEpot) {
+    Vector3d Z1; 
+    Vector3d Z2; 
+    Vector3d O1; 
+    Vector3d O2; 
+    Vector3d veltilde;
     for (auto& mol : Molecules) {
         for (auto& mono : mol.Monomers) {
-            Vector3d Z1; 
-            Vector3d Z2; 
-            Vector3d O1 {Rand::real_normal(), Rand::real_normal(), Rand::real_normal()}; 
-            Vector3d O2 {Rand::real_normal(), Rand::real_normal(), Rand::real_normal()}; 
+            O1(0) = Rand::real_normal();
+            O1(1) = Rand::real_normal();
+            O1(2) = Rand::real_normal(); 
+            O2(0) = Rand::real_normal();
+            O2(1) = Rand::real_normal();
+            O2(2) = Rand::real_normal();    
             Z1 = zc11*O1;
             Z2 = zc21*O1 + zc22*O2; 
-            Vector3d veltilde {mono.Velocity + mono.Force*dt/(2.*mono.Mass)}; 
-            mono.Velocity = velcexp*veltilde + velcsqrt*Z1/sqrt(mono.Mass); 
-            mono.Position += poscexp*veltilde + poscsqrt*Z2/sqrt(mono.Mass); 
+            //Vector3d veltilde {mono.Velocity + mono.Force*DeltaT/(2.*mono.Mass)}; 
+            //mono.Velocity = velcexp*veltilde + velcsqrt*Z1/sqrt(mono.Mass); 
+            //mono.Position += poscexp*veltilde + poscsqrt*Z2/sqrt(mono.Mass); 
+            veltilde = mono.Velocity + mono.Force*DeltaT*0.5;  // assumes Mass = 1!
+            mono.Velocity = velcexp*veltilde + velcsqrt*Z1; 
+            mono.Position += poscexp*veltilde + poscsqrt*Z2; 
         }
     }
     checkVerletLists();
@@ -714,7 +741,8 @@ void System::propagateLangevin(double dt, double Temperature, double gamma, bool
     //calculateForcesBrute(calcEpot);
     for (auto& mol : Molecules) {
         for (auto& mono : mol.Monomers) {
-            mono.Velocity += (mono.Force/mono.Mass)*dt*0.5;  
+            //mono.Velocity += (mono.Force/mono.Mass)*DeltaT*0.5;
+            mono.Velocity += mono.Force*DeltaT*0.5;    // assumes Mass = 1!
         }
     }
 }

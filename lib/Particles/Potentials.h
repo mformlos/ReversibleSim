@@ -5,7 +5,8 @@
 
 inline double FENE_Potential(double r2) {
     double potential {0.0}; 
-    potential = -15.0*2.25*log(1.0 - r2/2.25);
+    //potential = -15.0*2.25*log(1.0 - r2/2.25);
+    potential = -33.75*log(1.0 - r2/2.25);
     return potential; 
 }
 
@@ -66,9 +67,10 @@ inline double Reversible_Bond_Potential(double r, double r0, double K = 29.6) {
 	return potential;
 }
 
-inline double Reversible_Bond_Force(double r, double r0, double K) {
+inline double Reversible_Bond_Force(double r, double r0, double twoK) {
 	double force {0.0};
-	force = 2.0*K*(exp(r0-r)-exp(2.0*(r0-r)));
+	//force = 2.0*K*(exp(r0-r)-exp(2.0*(r0-r)));
+	force = twoK*(exp(r0-r)-exp(2.0*(r0-r)));
 	return force;
 }
 
