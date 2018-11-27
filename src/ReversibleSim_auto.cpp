@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     unsigned long long TotalSteps{}, n {}, m {}; 
     double MDStep{}, SimTime{}, EquilTime{}, Temperature{}, Time{}, Density {}, Gamma {}, ConstantK {}, ConstantR0 {};
     bool ParameterInitialized{}, Equilibrated{false}, Arranged {};
-    std::string OutputStepFile{}, MoleculeFile{}, FunctionalFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{}, ArrangeMolecules{};
+    std::string OutputStepFile{}, MoleculeFile{}, FunctionalFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{}, NeighbourCellFile{}, ArrangeMolecules{};
     std::vector<unsigned long long> OutputSteps {};
     std::vector<unsigned long long>::iterator OutputStepsIt{};
     
@@ -85,6 +85,8 @@ int main(int argc, char* argv[]) {
     if (!ParameterInitialized) return EXIT_FAILURE;
     ArrangeMolecules = extractParameter<std::string>("ArrangeMolecules", inputfile, ParameterInitialized);
     if (!ParameterInitialized) return EXIT_FAILURE;
+    NeighbourCellFile = extractParameter<std::string>("NeighbourCellFile", inputfile, ParameterInitialized);
+    if (!ParameterInitialized) return EXIT_FAILURE;
     
     inputfile.close(); 
     
@@ -111,6 +113,7 @@ int main(int argc, char* argv[]) {
     std::cout << "VelocityFile is " << VelocFile << std::endl;
     std::cout << "FunctionalFile is " << FunctionalFile << std::endl;
     std::cout << "ConfigFile is " << ConfigFile << std::endl;
+    std::cout << "NeighbourCellFile is " << NeighbourCellFile << std::endl;
 
     ////// RANDOM ENGINE SEEDING & WARMUP //////
     Rand::seed(Seed);
@@ -120,7 +123,14 @@ int main(int argc, char* argv[]) {
     
     /////// SYSTEM INITIALIZATION ///////
 
-    System Sys(1.23, 1.5, 1.3, Lx, Ly, Lz, ConstantK, ConstantR0, true, MDStep, Temperature, Gamma);
+    System Sys(1.3, 1.5, 1.3, Lx, Ly, Lz, ConstantK, ConstantR0, true, MDStep, Temperature, Gamma);
+    
+    std::cout << "Neighbourcells in each direction: " << Sys.Cells[0] << " " <<  Sys.Cells[1] << " " << Sys.Cells[2] << std::endl; 
+    std::cout << "Cell side lengths: " << Sys.CellSideLength[0] << " " <<  Sys.CellSideLength[1] << " " << Sys.CellSideLength[2] << std::endl;
+    
+    if (!Sys.setNeighbourDirections(NeighbourCellFile)){
+        return EXIT_FAILURE;
+    }
     
     if (!Sys.addMolecules(MoleculeFile, 1.0)) {
         std::cout << "MoleculeFile does not exist!" << std::endl; 
@@ -154,8 +164,10 @@ int main(int argc, char* argv[]) {
         while (!Arranged) {
             Arranged = Sys.arrangeMoleculesFCC();
             try {
-		        Sys.updateVerletLists();
-		        Sys.calculateForces(true);
+                Sys.updateCellLists(); 
+                Sys.calculateForcesCellList(); 
+		        /*Sys.updateVerletLists();
+		        Sys.calculateForces(true);*/
 		    }
 		    catch (const LibraryException &ex) {
 		        Arranged = false; 
@@ -184,9 +196,12 @@ int main(int argc, char* argv[]) {
 
 	try {
 		Sys.breakBonds();
-		Sys.makeBonds();
+		Sys.updateCellLists(); 
+		Sys.makeBondsCellList(); 
+		Sys.calculateForcesCellList(); 
+		/*Sys.makeBonds();
 		Sys.updateVerletLists();
-		Sys.calculateForces(true);
+		Sys.calculateForces(true);*/
 		//Sys.calculateForcesBrute();
 	}
 	catch (const LibraryException &ex) {

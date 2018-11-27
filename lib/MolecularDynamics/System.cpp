@@ -1,9 +1,9 @@
 #include "System.h"
 
 System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  bool PBCon, double dt, double T, double g) :
-    Cutoff {1.5}, 
-    VerletRadius {2.0}, 
-    VerletRadiusSq {4.0},
+    Cutoff {1.3}, 
+    VerletRadius {1.5}, 
+    VerletRadiusSq {2.25},
 	CaptureDistance {1.3},
 	K {aK},
 	twoK {aK*2.0},
@@ -16,9 +16,12 @@ System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  boo
         BoxSize[0] = Lx; 
         BoxSize[1] = Ly; 
         BoxSize[2] = Lz;
-        Cells[0] = unsigned(BoxSize[0]/(sqrt(2)*VerletRadius)); 
+        /*Cells[0] = unsigned(BoxSize[0]/(sqrt(2)*VerletRadius)); 
         Cells[1] = unsigned(BoxSize[1]/(sqrt(2)*VerletRadius)); 
-        Cells[2] = unsigned(BoxSize[2]/(sqrt(2)*VerletRadius));     
+        Cells[2] = unsigned(BoxSize[2]/(sqrt(2)*VerletRadius)); */
+        Cells[0] = unsigned(BoxSize[0]/Cutoff); 
+        Cells[1] = unsigned(BoxSize[1]/Cutoff); 
+        Cells[2] = unsigned(BoxSize[2]/Cutoff);        
         CellSideLength[0] = BoxSize[0]/(double)Cells[0]; 
         CellSideLength[1] = BoxSize[1]/(double)Cells[1];
         CellSideLength[2] = BoxSize[2]/(double)Cells[2];
@@ -32,6 +35,7 @@ System::System(double Lx, double Ly, double Lz, double aK, double aRadius0,  boo
         zc11 = sqrt(tau2);
         zc21 = (tau1-tau2)/zc11; 
         zc22 = sqrt(DeltaT - tau1*tau1/tau2); 
+        Epot = 0.0; 
     }
     
 
@@ -51,9 +55,12 @@ System::System(double aCutoff, double aVerletRadius, double aCapture, double Lx,
         BoxSize[0] = Lx; 
         BoxSize[1] = Ly; 
         BoxSize[2] = Lz;
-        Cells[0] = unsigned(BoxSize[0]/(sqrt(2)*VerletRadius)); 
+        /*Cells[0] = unsigned(BoxSize[0]/(sqrt(2)*VerletRadius)); 
         Cells[1] = unsigned(BoxSize[1]/(sqrt(2)*VerletRadius)); 
-        Cells[2] = unsigned(BoxSize[2]/(sqrt(2)*VerletRadius));      
+        Cells[2] = unsigned(BoxSize[2]/(sqrt(2)*VerletRadius));   */
+        Cells[0] = unsigned(BoxSize[0]/Cutoff); 
+        Cells[1] = unsigned(BoxSize[1]/Cutoff); 
+        Cells[2] = unsigned(BoxSize[2]/Cutoff);       
         CellSideLength[0] = BoxSize[0]/(double)Cells[0]; 
         CellSideLength[1] = BoxSize[1]/(double)Cells[1];
         CellSideLength[2] = BoxSize[2]/(double)Cells[2];
@@ -67,8 +74,30 @@ System::System(double aCutoff, double aVerletRadius, double aCapture, double Lx,
         zc11 = sqrt(tau2);
         zc21 = (tau1-tau2)/zc11; 
         zc22 = sqrt(DeltaT - tau1*tau1/tau2); 
+        Epot = 0.0; 
     }
-        
+     
+bool System::setNeighbourDirections(std::string filename) {
+    std::ifstream file (filename, std::ios::in); 
+    if (!file.is_open()) {
+        return false; 
+    }
+    int x {}, y {}, z{}; 
+    unsigned n {0};
+    while(file >> x >> y >> z) {
+        std::cout << x << " "<< y << " " << z << std::endl; 
+        NeighbourDirections[n][0] = x; 
+        NeighbourDirections[n][1] = y;
+        NeighbourDirections[n][2] = z;
+        n++; 
+    }
+    if (n != 13) {
+        std::cout << n << " instead of 13 neighbour directions supplied!" << std::endl; 
+        return false; 
+    }
+    return true; 
+}     
+   
 bool System::addMolecules(std::string filename, double mass) {
         std::ifstream file(filename, ios::in);
         if (!file.is_open()) return false;
@@ -433,6 +462,159 @@ void System::checkVerletLists() {
     }
 }
 
+void System::updateCellLists() {
+    std::array<int, 3> CellNumber{}; 
+    for (auto& sheet : CellList) {
+        for (auto& row : sheet) {
+            for (auto& list : row) {
+                list.clear(); 
+            }    
+        }
+    }
+    for (auto& mol : Molecules) {
+        for (auto& mono : mol.Monomers) {
+            Vector3d imPos; 
+            if (PBC) imPos = image(mono, BoxSize, 0.0);
+            else imPos = mono.Position; 
+            for (unsigned i = 0; i < 3; i++) {
+                CellNumber[i] = (int)(imPos(i)/CellSideLength[i]); 
+            }
+            try {
+                CellList[CellNumber[0]][CellNumber[1]][CellNumber[2]].push_front(&mono); 
+            }
+            catch (std::exception& e) {
+                throw CellAllocationException(mono, CellNumber);  
+            }
+        }
+    }
+}
+
+void System::calculateForcesCellList(bool calcEpot) {
+    double force_abs {}; 
+    Vector3d force {}; 
+    Vector3d relPos;
+    if (calcEpot) Epot = 0.0;    
+    for (auto& mol : Molecules) {
+        for (auto& mono : mol.Monomers) mono.Force = Vector3d::Zero(); 
+    }
+    for (int i = 0; i < Cells[0]; i++) {
+        for (int j = 0; j < Cells[1]; j++) {
+            for (int k = 0; k < Cells[2]; k++) {
+                ///loop over all monomers in this cell
+                for (auto first_it = CellList[i][j][k].begin(); first_it != CellList[i][j][k].end(); first_it++) 
+                {
+                    Particle* first = *first_it;
+                    int ReversiblyBonded {-1};
+        	        if (ReversibleBonds.count(first -> Identifier) > 0) ReversiblyBonded = ReversibleBonds.at(first -> Identifier);
+                    /// loop over all further monomers in this cell
+                    if (first_it !=  CellList[i][j][k].end()) {
+                        for (auto second_it = std::next(first_it,1); second_it != CellList[i][j][k].end(); second_it++)
+                        {
+                            Particle* second = *second_it;  
+                            //std::cout << "second: " << second -> Identifier << std::endl; 
+                            if (PBC) relPos = relative(*first, *second, BoxSize, 0.0); 
+                            else relPos = second -> Position - first -> Position;  
+                            double radius2 {relPos.squaredNorm()};
+                            if (calcEpot) {
+                                Epot += RLJ_Potential(radius2);
+                            }
+                            force_abs = RLJ_Force(radius2); 
+                            if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
+                                throw(RLJException(first -> Identifier, first -> Position, first -> Velocity, second -> Identifier, second -> Position, second -> Velocity, force_abs)); 
+                            }
+                            // 
+                            //first -> Force -= force;  
+                            //second -> Force += force; 
+                            if (ReversiblyBonded == second -> Identifier) {
+                            	double radius = sqrt(radius2);
+                            	if (calcEpot) {
+                            		Epot += Reversible_Bond_Potential(radius, Radius0, K);
+                            	}
+                            	force_abs += Reversible_Bond_Force(radius, Radius0, twoK)/radius;
+                            	if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
+						           throw(RLJException(first -> Identifier, first -> Position, first -> Velocity, second -> Identifier, second -> Position, second -> Velocity, force_abs)); 
+					            }
+					            //std::cout << first -> Identifier << " " << second -> Identifier << std::endl; 
+                            	//force = relPos*force_abs/radius;
+                            	//mono.Force -= force;
+                            }
+                            force = relPos*force_abs;
+                            first -> Force -= force;  
+                            second -> Force += force; 
+                        }
+                    }
+                    ////loop over all neighboring boxes  
+                    int l{}, m{}, n{}; 
+                    /// all boxes 
+                
+                    for (unsigned dir = 0; dir < 13; dir++) {
+                        
+                        l = i + NeighbourDirections[dir][0];
+                        m = j + NeighbourDirections[dir][1];
+                        n = k + NeighbourDirections[dir][2];
+                        l -= floor((double)l/Cells[0])*Cells[0]; 
+                        m -= floor((double)m/Cells[1])*Cells[1];
+                        n -= floor((double)n/Cells[2])*Cells[2];
+                        //std::cout << "Middle Cell: " << l << " " << m << " " << n << std::endl; 
+                        /// loop over all monomers in this neighbouring cell
+                        for (auto& second : CellList[l][m][n]) {
+                            //std::cout << "second: " << second -> Identifier << std::endl; 
+                            if (PBC) relPos = relative(*first, *second, BoxSize, 0.0); 
+                            else relPos = second -> Position - first -> Position;  
+                            double radius2 {relPos.squaredNorm()};
+                            if (calcEpot) {
+                                Epot += RLJ_Potential(radius2);
+                            }
+                            force_abs = RLJ_Force(radius2); 
+                            //std::cout << force_abs << std::endl;    
+                            if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
+                                throw(RLJException(first -> Identifier, first -> Position, first -> Velocity, second -> Identifier, second -> Position, second -> Velocity, force_abs)); 
+                            }
+                            //if (force_abs > 0) Neighbours.push_back(second -> Identifier); 
+                            if (ReversiblyBonded == second -> Identifier) {
+                            	double radius = sqrt(radius2);
+                            	if (calcEpot) {
+                            		Epot += Reversible_Bond_Potential(radius, Radius0, K);
+                            	}
+                            	force_abs += Reversible_Bond_Force(radius, Radius0, twoK)/radius;
+                            	if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
+						           throw(RLJException(first -> Identifier, first -> Position, first -> Velocity, second -> Identifier, second -> Position, second -> Velocity, force_abs)); 
+					            }
+					            //std::cout << first -> Identifier << " " << second -> Identifier << std::endl; 
+                            	//force = relPos*force_abs/radius;
+                            	//mono.Force -= force;
+                            }
+                            force = relPos*force_abs; 
+                            first -> Force -= force;  
+                            second -> Force += force; 
+                        }
+                    }
+                    for (auto& bonded : first ->Bonds) {
+                        Vector3d relPos;
+                        if (PBC) relPos = relative(*first, *bonded, BoxSize, 0.0);
+                        else relPos = bonded -> Position - first -> Position;  
+                        double radius2 {relPos.squaredNorm()}; 
+                        if (calcEpot) {
+                            Epot += FENE_Potential(radius2);
+                        }    
+                        force_abs = FENE_Force(radius2); 
+                        if (fabs(force_abs) > 1e4 || std::isinf(force_abs) || std::isnan(force_abs)) {
+                           throw(FENEException(first -> Identifier, bonded->Identifier, force_abs)); 
+                        }
+                        force = relPos*force_abs; 
+                        first -> Force -= force; 
+                        bonded -> Force += force; 
+                    }
+                }    
+            }
+        }
+    }
+
+}
+
+
+
+
 void System::breakBonds() {
 	for (auto& bondedpair : ReversibleBonds) {
 		if (bondedpair.second >= 0) {
@@ -483,6 +665,78 @@ void System::makeBonds() {
 			}
 		}
 	}
+}
+
+void System::makeBondsCellList() {
+    std::array<int, 3> CellNumber{}; 
+    Vector3d imPos; 
+    int l{}, m{}, n{}; 
+    for (auto& bondedpair : ReversibleBonds) {
+        if (bondedpair.second < 0) {
+            unsigned molIndex1 {}, monoIndex1 {};
+			std::vector<unsigned> PossibleBonds {};
+			getIndex(bondedpair.first, molIndex1, monoIndex1);
+			Particle &mono {Molecules[molIndex1].Monomers[monoIndex1]};
+			if (PBC) imPos = image(mono, BoxSize, 0.0);
+            else imPos = mono.Position; 
+            for (unsigned i = 0; i < 3; i++) {
+                CellNumber[i] = (int)(imPos(i)/CellSideLength[i]); 
+            }
+            /// loop over all further monomers in this cell
+            for (auto& other : CellList[CellNumber[0]][CellNumber[1]][CellNumber[2]]) {
+                if (other == &mono) continue;
+                if (other -> Functional && ReversibleBonds.at(other -> Identifier) < 0) {
+					Vector3d relPos;
+					if (PBC) relPos = relative(mono, *other, BoxSize, 0.0);
+					else relPos = other -> Position - mono.Position;
+					double radius {relPos.norm()};
+					if (radius < CaptureDistance) {
+						PossibleBonds.push_back(other -> Identifier); //put possible candidates in list
+						//bondedpair.second = other -> Identifier;
+						//ReversibleBonds.at(bondedpair.second) = mono.Identifier;
+					}
+				}
+			}
+			// loop over other 26 cells
+			for (unsigned dir = 0; dir < 13; dir++) {
+                for (int sign = -1; sign <= 1; sign += 2){
+                    l = CellNumber[0] + sign*NeighbourDirections[dir][0];
+                    m = CellNumber[1] + sign*NeighbourDirections[dir][1];
+                    n = CellNumber[2] + sign*NeighbourDirections[dir][2];
+                    l -= floor((double)l/Cells[0])*Cells[0]; 
+                    m -= floor((double)m/Cells[1])*Cells[1];
+                    n -= floor((double)n/Cells[2])*Cells[2];
+                    for (auto& other : CellList[l][m][n]) {
+                        if (other -> Functional && ReversibleBonds.at(other -> Identifier) < 0) {
+					        Vector3d relPos;
+					        if (PBC) relPos = relative(mono, *other, BoxSize, 0.0);
+					        else relPos = other -> Position - mono.Position;
+					        double radius {relPos.norm()};
+					        if (radius < CaptureDistance) {
+						        PossibleBonds.push_back(other -> Identifier); //put possible candidates in list
+						        //bondedpair.second = other -> Identifier;
+						        //ReversibleBonds.at(bondedpair.second) = mono.Identifier;
+					        }
+				        }
+                    }
+                }
+            }
+            // now choose one candidate
+			if (PossibleBonds.size() > 1) {
+			    /*std::cout << "mono to be bonded: " << mono.Identifier << "\npossible partners: " << std::endl; 
+			    for (auto& b : PossibleBonds) {
+			        std::cout << b << std::endl; 
+			    }*/
+				int ChosenIndex {Rand::int_uniform(0, PossibleBonds.size()-1)};
+				bondedpair.second = PossibleBonds[ChosenIndex];
+				ReversibleBonds.at(bondedpair.second) = mono.Identifier;
+			}
+			else if (PossibleBonds.size() == 1) {
+				bondedpair.second = PossibleBonds[0];
+				ReversibleBonds.at(bondedpair.second) = mono.Identifier;
+			}
+        }
+    }
 }
 
 void System::getIndex(unsigned Index, unsigned& molIndex, unsigned& monoIndex) {
@@ -697,7 +951,7 @@ void System::propagate(bool calcEpot) {
             //TODO: boundary 
         }
     }
-    checkVerletLists();
+    //checkVerletLists();
     breakBonds();
     makeBonds();
     calculateForces(calcEpot);
@@ -734,10 +988,11 @@ void System::propagateLangevin(bool calcEpot) {
             mono.Position += poscexp*veltilde + poscsqrt*Z2; 
         }
     }
-    checkVerletLists();
+    //checkVerletLists();
+    updateCellLists(); 
     breakBonds();
-    makeBonds();
-    calculateForces(calcEpot);
+    makeBondsCellList();
+    calculateForcesCellList(calcEpot);
     //calculateForcesBrute(calcEpot);
     for (auto& mol : Molecules) {
         for (auto& mono : mol.Monomers) {
@@ -831,11 +1086,11 @@ double System::KineticEnergy() {
 
 
 double System::PotentialEnergy() {
-    double Epot {0.0}; 
+    double Epotnow {0.0}; 
     for (auto& mol : Molecules) {
-        Epot += mol.PotentialEnergy(); 
+        Epotnow += mol.PotentialEnergy(); 
     }
-    return Epot; 
+    return Epotnow; 
 }
 
 std::tuple<double, Matrix3d> System::GyrationTensor() {
@@ -894,7 +1149,7 @@ void System::printPDB(FILE* pdb, int step, bool velocs) {
 }
 
 void System::printStatistics(std::ostream& os, double time) {
-    double Ekin {KineticEnergy()}, Epot {PotentialEnergy()}; 
+    double Ekin {KineticEnergy()};  
     std::tuple<unsigned, unsigned> Bonds {NumberOfBonds()};
     std::tuple<double, Matrix3d> GyrTuple {GyrationTensor()};
     Matrix3d GyrTensor {std::get<1>(GyrTuple)}; 

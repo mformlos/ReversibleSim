@@ -23,7 +23,7 @@ public:
     double DeltaT; //TimeStep
     double Temperature; 
     double Gamma; //Constant for Langevin thermostat
-    
+    double Epot; 
     /// Langevin Constants
     double velcexp;
     double velcsqrt; 
@@ -44,6 +44,7 @@ public:
     std::array<double,3> CellSideLength; 
     
     std::vector<std::vector<std::vector<std::forward_list<Particle*>>>> CellList;
+    std::array<std::array<int,3>,13> NeighbourDirections;
     
     std::vector<Molecule> Molecules; 
     
@@ -56,15 +57,18 @@ public:
     
     void updateVerletLists(); 
     void checkVerletLists(); 
+    void updateCellLists(); 
     
     void breakBonds();
     void makeBonds();
+    void makeBondsCellList(); 
 
     void getIndex(unsigned, unsigned&, unsigned&);
     void makeIndex(unsigned, unsigned, unsigned&);
 
     void calculateForces(bool calcEpot=false); 
     void calculateForcesBrute(bool calcEpot=false); 
+    void calculateForcesCellList(bool calcEpot=false); 
     double calculateIntermolecularEnergy(unsigned, unsigned);
     bool calculateOverlap(const Molecule&, const Molecule&);
     
@@ -82,6 +86,7 @@ public:
     void centerMolecule(unsigned); 
     bool arrangeMolecules();
     bool arrangeMoleculesFCC();
+    bool setNeighbourDirections(std::string); 
 
     
     void propagate(bool calcEpot=false); 
