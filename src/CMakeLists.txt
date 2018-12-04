@@ -2,17 +2,20 @@
 include_directories ("${PROJECT_SOURCE_DIR}/lib/Particles")
 include_directories ("${PROJECT_SOURCE_DIR}/lib/MolecularDynamics")
 
-add_executable(moltest mol_test.cpp)
-target_link_libraries(moltest Random Molecule Particle System)
+#add_executable(moltest mol_test.cpp)
+#target_link_libraries(moltest Random Molecule Particle System)
 
-add_executable(LangevinTest Langevin_test.cpp)
-target_link_libraries(LangevinTest Random Molecule Particle System)
+#add_executable(LangevinTest Langevin_test.cpp)
+#target_link_libraries(LangevinTest Random Molecule Particle System)
 
 add_executable(ReversibleSim_auto ReversibleSim_auto.cpp)
 target_link_libraries(ReversibleSim_auto Random Molecule Particle System)
 
 add_executable(Equilibrate_Box equilibrate_box.cpp)
 target_link_libraries(Equilibrate_Box Random Molecule Particle System)
+
+add_executable(Equilibrate_Box_New equilibrate_box_new.cpp)
+target_link_libraries(Equilibrate_Box_New Random Molecule Particle System)
 
 add_executable(Widom Widom.cpp)
 target_link_libraries(Widom Random System)
@@ -33,11 +36,18 @@ target_link_libraries(Structure_factor Molecule)
 add_executable(Form_factor form_factor.cpp)
 target_link_libraries(Form_factor System)
 
+add_executable(distance_vs_contour distance_vs_contour.cpp)
+target_link_libraries(distance_vs_contour System)
+
 add_executable(Create_scattering_vectors create_scattering_vectors.cpp)
 
 add_executable(cluster_calc cluster_calc.cpp)
 
 add_executable(cluster_corr cluster_corr.cpp)
+
+add_executable(bond_corr bond_corr.cpp)
+
+add_executable(contour_hist contour_hist.cpp)
 
 add_executable(Cluster_Time cluster_time.cpp)
 

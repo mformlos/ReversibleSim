@@ -91,7 +91,9 @@ public:
     
     void propagate(bool calcEpot=false); 
     void propagateLangevin(bool calcEpot=false); 
-    void scaleSystem(double); 
+    void scaleSystem(double);  //scale all directions equally
+    void scaleSystem(double, double, double); //scale directions differently
+    void updateCellListDimensions();  
     
     //getter:
     

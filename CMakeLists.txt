@@ -5,7 +5,7 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
-list( APPEND CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -g -march=native -ffast-math  -Wall -O3 -Wfatal-errors ")
+list( APPEND CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -g -march=native -ffast-math  -fopenmp -Wall -O3 -Wfatal-errors ")
 
 include_directories ("${PROJECT_BINARY_DIR}")
 

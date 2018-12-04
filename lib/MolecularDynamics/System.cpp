@@ -195,13 +195,13 @@ bool System::initializePositionsPDB(std::string filename) {
     std::ifstream file {filename};
     if (!file.is_open()) return false;
     std::string dump, line{}; 
-    double x, y, z;
+    double x, y, z, vx, vy, vz;
     unsigned count {0}, Npart {NumberOfParticles()}; 
     unsigned mol{0}, mono{0}; 
     if (file.is_open()) {
         while(getline(file, line)) {
             std::istringstream iss(line); 
-            if (iss >> dump >> dump >> dump >> dump >> dump >> x >> y >> z >> dump >> dump >> dump)        
+            if (iss >> dump >> dump >> dump >> dump >> dump >> x >> y >> z >> vx  >> vy >> vz)        
             { 
 			    if (count >= Npart) {
 			        std::cout << "all " << count << " monomer positions were initialized, but there is more data" << std::endl; 
@@ -210,6 +210,9 @@ bool System::initializePositionsPDB(std::string filename) {
 			    Molecules[mol].Monomers[mono].Position(0) = x;
 			    Molecules[mol].Monomers[mono].Position(1) = y;
 			    Molecules[mol].Monomers[mono].Position(2) = z;
+			    Molecules[mol].Monomers[mono].Velocity(0) = vx;
+			    Molecules[mol].Monomers[mono].Velocity(1) = vy;
+			    Molecules[mol].Monomers[mono].Velocity(2) = vz;
 			    mono++; 
 			    if (mono >= Molecules[mol].NumberOfMonomers) {
 			        mono = 0; 
@@ -1045,6 +1048,41 @@ void System::scaleSystem(double scaling) {
     BoxSize[0] *= scaling;    
     BoxSize[1] *= scaling; 
     BoxSize[2] *= scaling;
+    updateCellListDimensions();
+}
+
+void System::scaleSystem(double cx, double cy, double cz) {
+    for (auto& mol : Molecules) {
+        for (auto& part : mol.Monomers) {
+            part.Position(0) *= cx;
+            part.Position(1) *= cy;
+            part.Position(2) *= cz;
+        }
+    }
+    BoxSize[0] *= cx;    
+    BoxSize[1] *= cy; 
+    BoxSize[2] *= cz;
+    updateCellListDimensions(); 
+}
+
+void System::updateCellListDimensions(){
+    for (auto& sheet : CellList) {
+        for (auto& row : sheet) {
+            for (auto& list : row) {
+                list.clear(); 
+            } 
+            row.clear();    
+        }
+        sheet.clear(); 
+    }
+    CellList.clear(); 
+    Cells[0] = unsigned(BoxSize[0]/Cutoff); 
+    Cells[1] = unsigned(BoxSize[1]/Cutoff); 
+    Cells[2] = unsigned(BoxSize[2]/Cutoff);        
+    CellSideLength[0] = BoxSize[0]/(double)Cells[0]; 
+    CellSideLength[1] = BoxSize[1]/(double)Cells[1];
+    CellSideLength[2] = BoxSize[2]/(double)Cells[2];
+    CellList = std::vector<std::vector<std::vector<std::forward_list<Particle*>>>>(Cells[0], std::vector<std::vector<std::forward_list<Particle*>>>(Cells[1], std::vector<std::forward_list<Particle*>>(Cells[2], std::forward_list<Particle*>())));
 }
 
 unsigned System::NumberOfParticles() {
