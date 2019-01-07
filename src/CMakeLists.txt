@@ -36,8 +36,14 @@ target_link_libraries(Structure_factor Molecule)
 add_executable(Form_factor form_factor.cpp)
 target_link_libraries(Form_factor System)
 
+add_executable(MSD_new msd_new.cpp)
+target_link_libraries(MSD_new System)
+
 add_executable(distance_vs_contour distance_vs_contour.cpp)
 target_link_libraries(distance_vs_contour System)
+
+add_executable(structure_molecules structure_molecules.cpp)
+target_link_libraries(structure_molecules System)
 
 add_executable(Create_scattering_vectors create_scattering_vectors.cpp)
 

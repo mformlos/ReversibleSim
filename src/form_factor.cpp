@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Total Monomers: " << NumberOfMonomers << std::endl; 
     
     std::string name;
-	name = Directory+"form_factor";
+	name = Directory+"/form_factor";
 	std::ifstream test(name);
 	if (test.good()){
 		std::cout << "file " << name << " already exists! Aborting..." << std::endl;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 	double distance{}, qr {}, bessel {}; 
 	for (unsigned repl = 0; repl < Replicas; repl++) {
 	    Step = StartStep; 
-	    ConfigFileStart = Directory+"REPL-"+std::to_string(repl)+"/configs/config"; 
+	    ConfigFileStart = Directory+"/REPL-"+std::to_string(repl)+"/configs/config"; 
 	    while (true) {
 	        ConfigFile = ConfigFileStart+std::to_string(Step)+".pdb";
 		    std::cout << ConfigFile << std::endl;

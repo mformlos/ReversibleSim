@@ -272,10 +272,10 @@ int main(int argc, char* argv[]) {
         }
         
         if (m == *OutputStepsIt) {
-            Sys.printStatistics(StatisticsStream, Time);
             PDBout = fopen((ConfigOutFile+std::to_string(m)+".pdb").c_str(), "w");
             Sys.printPDB(PDBout, n, 1); 
             fclose(PDBout);
+            Sys.printStatistics(StatisticsStream, Time);
         	std::ofstream Bonds ("Bonds/Bonds"+std::to_string(m),std::ios::out | std::ios::trunc);
         	Sys.printBonds(Bonds);
         	Bonds.close();
