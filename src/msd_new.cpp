@@ -12,9 +12,10 @@
 #include "HelperFunctions.h"
 
 int main(int argc, char* argv[]) {
-    std::string Directory{}, ReplicaDir{},  OutputDir {}, OutputFileName{}, StepFile{}, MoleculeFile{}, ConfigFile{}, ConfigFileStart{}; 
+    std::string Directory{}, ReplicaDir{},  OutputDir {}, OutputFileName{}, StepFile{}, MoleculeFile{}, ConfigFile{}, ConfigFileStart{}, makeDir{}; 
     unsigned StartStep{}, DStep {}, SampleStep{}, Replicas{}, Molecules{}, NumberOfMonomers{}; 
     double DeltaT{}, Time{}; 
+    int dir_err{};
     
     std::vector<unsigned long long> StepVector{}; 
     std::vector<unsigned long long>::iterator StepVectorIterator{}; 
@@ -22,9 +23,15 @@ int main(int argc, char* argv[]) {
     std::map<double,double> MSD; 
     std::map<double,unsigned> count;
     std::map<double,double> MQD; 
+    
+    std::map<double,double> MSD_t; 
+    std::map<double,unsigned> count_t;
+    std::map<double,double> MQD_t; 
+    
+    std::ofstream OutputFile{}; 
 
     if (argc != 8) {
-        std::cout << "usage: ./cluster_corr DIRECTORY MOLECULEFILE REPLICAS STARTSTEP SAMPLESTEP DELTAT STEPFILE " << std::endl;  
+        std::cout << "usage: ./msd_new DIRECTORY MOLECULEFILE REPLICAS STARTSTEP SAMPLESTEP DELTAT STEPFILE " << std::endl;  
         return EXIT_FAILURE; 
     }
     
@@ -39,6 +46,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Directory: " << Directory << " Replicas: " << Replicas << " MoleculeFile: " << MoleculeFile << std::endl;
 	std::cout << "StartStep: " << StartStep << " SamplingStep: " << SampleStep << " StepFile: " << StepFile << std::endl;
 	std::cout << "DeltaT: " << DeltaT << std::endl;
+
 	
     initializeStepVector(StepVector, StepFile);
     System Sys0(200, 200, 200, 0.0, 0.0, false);
@@ -68,6 +76,24 @@ int main(int argc, char* argv[]) {
         ReplicaDir = Directory+"/REPL-"+std::to_string(repl);
         ConfigFileStart = ReplicaDir+"/configs/config"; 
         T0Step = StartStep;
+        /*makeDir=ReplicaDir+"/data";
+        dir_err = mkdir(makeDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (-1 == dir_err) {
+            printf("Error creating directory!n");
+            exit(1);
+        }*/
+        makeDir=ReplicaDir+"/data/MSD";
+        dir_err = mkdir(makeDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (-1 == dir_err) {
+            printf("Error creating directory!n");
+            exit(1);
+        }
+        makeDir=ReplicaDir+"/data/MQD";
+        dir_err = mkdir(makeDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (-1 == dir_err) {
+            printf("Error creating directory!n");
+            exit(1);
+        }
         /// loop over T0
         while (true) {
             std::cout <<"T0: " <<  T0Step << std::endl; 
@@ -77,7 +103,9 @@ int main(int argc, char* argv[]) {
 		        std::cout << "problem with initializing monomers" << std::endl;
 		        break; 
 		    }
-            
+            MSD_t.clear();
+            MQD_t.clear(); 
+            count_t.clear();
             /// loop over t > 0
             StepVectorIterator = StepVector.begin(); 
             while (StepVectorIterator != StepVector.end()) {
@@ -100,20 +128,36 @@ int main(int argc, char* argv[]) {
 		                relPos = Sys0.Molecules[mol].Monomers[mono].Position - SysT.Molecules[mol].Monomers[mono].Position;
 		                square = relPos.squaredNorm(); 
 		                MSD[Time] += square; 
+		                MSD_t[Time] += square;
 		                square *= square; 
 		                MQD[Time] += square; 
-		                count[Time]++;    
+		                MQD_t[Time] += square; 
+		                count[Time]++;  
+		                count_t[Time]++;   
 		            }
 		        }
 		        
 		        StepVectorIterator++;
             }
+            //// Output for current T0
+            OutputFileName = ReplicaDir+"/data/MSD/MSD-t-"+std::to_string(T0Step); 
+            OutputFile.open(OutputFileName, std::ios::out | std::ios::trunc);
+            for (auto& el : MSD_t) {
+                OutputFile << el.first << " " << el.second/(count_t[el.first]) << std::endl; 
+            }
+            OutputFile.close(); 
+            OutputFileName = ReplicaDir+"/data/MQD/MQD-t-"+std::to_string(T0Step); 
+            OutputFile.open(OutputFileName, std::ios::out | std::ios::trunc);
+            for (auto& el : MQD_t) {
+                OutputFile << el.first << " " << el.second/(count_t[el.first]) << std::endl; 
+            }
+            OutputFile.close(); 
             T0Step += SampleStep; 
         }
     }
     
     OutputFileName = Directory+"/MSD"; 
-    std::ofstream OutputFile (OutputFileName, std::ios::out | std::ios::trunc);
+    OutputFile.open(OutputFileName, std::ios::out | std::ios::trunc);
     for (auto& el : MSD) {
         OutputFile << el.first << " " << el.second/(count[el.first]) << std::endl; 
     }
