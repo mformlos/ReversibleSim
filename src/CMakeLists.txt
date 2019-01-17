@@ -53,6 +53,8 @@ add_executable(cluster_corr cluster_corr.cpp)
 
 add_executable(bond_corr bond_corr.cpp)
 
+add_executable(bond_corr_intervals bond_corr_intervals.cpp)
+
 add_executable(contour_hist contour_hist.cpp)
 
 add_executable(Cluster_Time cluster_time.cpp)

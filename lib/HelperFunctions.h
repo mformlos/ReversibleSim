@@ -28,6 +28,18 @@ Type extractParameter(std::string key, std::ifstream& inputfile, bool& found) {
     return param; 
 }
 
+template <typename Type>
+bool initializeVector(std::vector<Type>& vec, std::string filename) {
+    std::ifstream file (filename, std::ios::in); 
+    if (!file.is_open()) {
+        return false; 
+    }
+    Type in{}; 
+    while(file >> in) {
+        vec.push_back(in); 
+    } 
+    return true;
+}
 
 
 bool initializeStepVector(std::vector<unsigned long long>& vec, std::string filename) {
