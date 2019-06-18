@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     double Lx{}, Ly{}, Lz{}, StartLx {}, StartLy {}, StartLz {};  
     unsigned long long n {}, ScalingStep {}, SamplingStep {}; 
     double MDStep{}, Temperature{}, Time{0.0}, Density {}, Gamma {}, ConstantK {}, ConstantR0 {}, ScalingX {0.99}, ScalingY{sqrt(ScalingX)}, ScalingZ{sqrt(ScalingX)};
-    bool ParameterInitialized{}, BoxSizeReached{false}, Arranged {};
+    bool ParameterInitialized{}, BoxSizeReached{false}, Arranged {}, Shrink{};
     std::string MoleculeFile{}, ConfigFile{}, VelocFile{}, StatisticsFile{}, ConfigOutFile{}, LinkFile{},  NeighbourCellFile{}, ArrangeMolecules{"no"};
     
     
@@ -125,7 +125,9 @@ int main(int argc, char* argv[]) {
     std::cout << "ScalingY is " << ScalingY << std::endl;
     std::cout << "ScalingZ is " << ScalingZ << std::endl;
 
-    
+    if (StartLy > Ly) {
+	Shrink=true;  
+    }
     ////// RANDOM ENGINE SEEDING & WARMUP //////
     Rand::seed(Seed);
     Rand::warmup(10000);
@@ -159,6 +161,7 @@ int main(int argc, char* argv[]) {
     } 
     
     if (!Sys.initializePositionsPDB(ConfigFile)) {
+    //if (!Sys.initializePositions(ConfigFile)) {
         std::cout << "ConfigFile does not exist or contains too little lines!" << std::endl; 
         return EXIT_FAILURE; 
     } 
@@ -198,7 +201,13 @@ int main(int argc, char* argv[]) {
     Sys.printPDB(PDBout, 0, 1);
 	fclose(PDBout);
 	Sys.printStatistics(StatisticsStream, Time);
-    
+   
+     
+    if (Sys.BoxSize[0] == Lx) {
+	std::cout << "boxsize reached" << std::endl; 
+	return(0); 
+    }
+
     ////////////////////////////////////
     ////// TIME MEASUREMENT START //////
     
@@ -232,7 +241,13 @@ int main(int argc, char* argv[]) {
             
             std::cout << "BoxSize currently: " << Sys.BoxSize[0] << " , " << Sys.BoxSize[1] << " , " << Sys.BoxSize[2] << std::endl; 
             std::cout << "Cell side lengths: " << Sys.CellSideLength[0] << " " <<  Sys.CellSideLength[1] << " " << Sys.CellSideLength[2] << std::endl;
-            if (Sys.BoxSize[0] >= Lx) {
+            if (Shrink && Sys.BoxSize[0] <= Lx) {
+	        BoxSizeReached = true;
+                n = 0; 
+                Sys.wrapMoleculesCOM(); 
+                std::cout << "BoxSize reached" << std::endl;
+	    }
+            else if (!(Shrink) && Sys.BoxSize[0] >= Lx) {
             //if (abs(Sys.BoxSize[0] - Lx) < 0.1 && abs(Sys.BoxSize[1] - Ly) < 0.1 && abs(Sys.BoxSize[2] - Lz) < 0.1) {
                 BoxSizeReached = true;
                 n = 0;  

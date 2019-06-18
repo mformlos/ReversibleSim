@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 	std::map<double,unsigned> Bond_corr_average_count; 
     //std::vector<std::map<double,unsigned>> Bond_corr_average_count(NIntervals, std::map<double,unsigned>());
     
-    std::map<double,double> Spin_corr_average;
+    std::vector<std::map<double,double>> Spin_corr_average(NIntervals, std::map<double,double>());
     std::map<double,unsigned> Spin_corr_average_count;
 	
 
@@ -82,8 +82,7 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE; 
         }*/
         
-        std::map<double,double> Spin_corr;
-        std::map<double, double>::iterator Spin_corr_iter; 
+        
         unsigned contour{}; 
         unsigned intervalindex {}; 
         
@@ -98,7 +97,9 @@ int main(int argc, char* argv[]) {
                 std::cout << "reached last frame " << T0Step-SampleStep << ", continuing with next replica" << std::endl; 
                 break;  
             }
+            
             std::vector<std::map<double,double>> Bond_corr (NIntervals, std::map<double,double>());
+            std::vector<std::map<double,double>> Spin_corr (NIntervals, std::map<double,double>());
             std::map<unsigned, unsigned> Bonds_zero{}; 
             std::map<unsigned, unsigned> Spin_t{};
             /// get input from Bondfile at t=0
@@ -166,12 +167,19 @@ int main(int argc, char* argv[]) {
                         ++it;
                     }
                 }
-                
-                Spin_corr[Time] += Spin_t.size(); 
+                for (auto& bond : Spin_t) {
+                    contour =  bond.second-bond.first;
+                    intervalindex = 0; 
+                    while ( IntervalEnds[intervalindex] < contour) {
+                        intervalindex++;     
+                    }
+                    Spin_corr[intervalindex][Time]++; 
+                }
+                //Spin_corr[Time] += Spin_t.size(); 
                 for (unsigned i = 0; i < NIntervals; i++) {
                     Bond_corr_average[i][Time] += Bond_corr[i][Time]; 
+                    Spin_corr_average[i][Time] += Spin_corr[i][Time]; 
                 }
-                Spin_corr_average[Time] += Spin_t.size(); 
                 Bond_corr_average_count[Time]++; 
                 
                 
@@ -184,13 +192,7 @@ int main(int argc, char* argv[]) {
     
     Normalization /= count;
     
-    SpinOutputFileName = Directory+"/SpinCorr";
-    std::ofstream SpinOutputFile (SpinOutputFileName, std::ios::out | std::ios::trunc);
     
-    for (auto& corr : Spin_corr_average) {
-        SpinOutputFile << corr.first << " " << corr.second/(Normalization*Bond_corr_average_count[corr.first]) << std::endl; 
-    }
-    SpinOutputFile.close();
     
     std::ofstream BondOutputFile{}; 
     unsigned IntervalStart {2}, IntervalEnd{}; 
@@ -203,6 +205,20 @@ int main(int argc, char* argv[]) {
         }
         BondOutputFile.close();
         IntervalStart = IntervalEnd+1;     
+    }
+    
+    std::ofstream SpinOutputFile{}; 
+    IntervalStart = 2; 
+    for (unsigned i = 0; i < NIntervals; i++) {
+        IntervalEnd = IntervalEnds[i]; 
+        SpinOutputFileName = Directory+"/SpinCorr-"+std::to_string(IntervalStart)+"-"+std::to_string(IntervalEnd);
+        SpinOutputFile.open(SpinOutputFileName, std::ios::out | std::ios::trunc);
+    
+        for (auto& corr : Spin_corr_average[i]) {
+            SpinOutputFile << corr.first << " " << corr.second*count/(Normalization_intervals[i]*Bond_corr_average_count[corr.first]) << std::endl; 
+        }
+        SpinOutputFile.close();
+        IntervalStart = IntervalEnd+1;
     }
     
     return 0;  

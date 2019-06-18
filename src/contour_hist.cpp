@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     
     
     if (argc != 5) {
-        std::cout << "usage: ./cluster_corr DIRECTORY REPLICAS STARTSTEP SAMPLESTEP" << std::endl;  
+        std::cout << "usage: ./contour_hist DIRECTORY REPLICAS STARTSTEP SAMPLESTEP" << std::endl;  
         return EXIT_FAILURE; 
     }
      

@@ -42,6 +42,9 @@ target_link_libraries(MSD_new System)
 add_executable(distance_vs_contour distance_vs_contour.cpp)
 target_link_libraries(distance_vs_contour System)
 
+add_executable(distance_vs_contour_separate distance_vs_contour_separate.cpp)
+target_link_libraries(distance_vs_contour_separate System)
+
 add_executable(structure_molecules structure_molecules.cpp)
 target_link_libraries(structure_molecules System)
 
@@ -54,6 +57,8 @@ add_executable(cluster_corr cluster_corr.cpp)
 add_executable(bond_corr bond_corr.cpp)
 
 add_executable(bond_corr_intervals bond_corr_intervals.cpp)
+
+add_executable(bond_pair_occurrence bond_pair_occurrence.cpp)
 
 add_executable(contour_hist contour_hist.cpp)
 

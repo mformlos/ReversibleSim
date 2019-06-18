@@ -55,12 +55,15 @@ int main(int argc, char* argv[]) {
         ReplicaDir = Directory+"/REPL-"+std::to_string(repl);
         Step = StartStep; 
         ConfigFileStart = Directory+"/REPL-"+std::to_string(repl)+"/configs/config";
-        while (true) {
+        //while (true) {
+        while (Step <=20000000) {
 	        ConfigFile = ConfigFileStart+std::to_string(Step)+".pdb";
-		    std::cout << ConfigFile << std::endl;
+		    //std::cout << ConfigFile << std::endl;
 		    if (!Sys.initializePositionsPDB(ConfigFile)) {
-		        std::cout << "problem with initializing monomers" << std::endl;
-		        break; 
+		        //std::cout << "problem with initializing monomers" << std::endl;
+		        //break;
+		        Step += SampleStep;
+		        continue; 
 		    } 
 		    for (auto& mol : Sys.Molecules) {
 		        for (unsigned i = 0; i < mol.NumberOfMonomers -1; i++) {
