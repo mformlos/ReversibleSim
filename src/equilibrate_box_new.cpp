@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     std::cout << "ScalingY is " << ScalingY << std::endl;
     std::cout << "ScalingZ is " << ScalingZ << std::endl;
 
-    if (StartLy > Ly) {
+    if (StartLx > Lx) {
 	Shrink=true;  
     }
     ////// RANDOM ENGINE SEEDING & WARMUP //////
